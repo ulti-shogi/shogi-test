@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <title>棋士プロフィール検索テスト（列ごと検索＋並び替え）</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif; margin: 24px; }
+    table { border-collapse: collapse; width: 100%; max-width: 980px; }
+    th, td { border: 1px solid #ddd; padding: 6px 8px; }
+    th { background: #f5f5f5; text-align: left; position: sticky; top: 0; }
+    caption { text-align: left; font-weight: bold; margin-bottom: 8px; }
+    th.sortable { cursor: pointer; user-select: none; }
+    th.sortable::after { content: " ↕"; font-weight: normal; color: #888; }
+    th[aria-sort="ascending"]::after { content: " ↑"; color: #333; }
+    th[aria-sort="descending"]::after { content: " ↓"; color: #333; }
+    tfoot { color:#666; font-size: 12px; }
+    input.col-filter { width: 95%; padding: 4px; font-size: 90%; box-sizing: border-box; }
+  </style>
+</head>
+<body>
+  <h1>棋士プロフィール（列ごと検索＋並び替え）</h1>
+
+  <table id="kishi">
+    <caption>タイトル保持者・永世称号有資格者（一部）</caption>
+    <thead>
+      <tr id="header-row"></tr>
+      <tr id="filter-row"></tr>
+    </thead>
+    <tbody id="data-body"></tbody>
+    <tfoot>
+      <tr><td colspan="5">列見出しクリックで並び替え。各列の入力欄でフィルタ可能。</td></tr>
+    </tfoot>
+  </table>
+
+  <script>
+    // ==== CSVデータ ====
+    const csvData = `
+棋士番号,名前,生年月日,四段昇段日,出身地
+307,藤井聡太,2002-07-19,2016-10-01,愛知県
+324,伊藤匠,2002-10-10,2020-10-01,東京都
+239,渡辺明,1984-04-23,2000-04-01,東京都
+175,羽生善治,1970-09-27,1985-12-18,埼玉県
+131,谷川浩司,1962-04-06,1976-12-20,兵庫県
+`;
+
+    function csvToArray(csv) {
+      return csv.trim().split("\n").map(line => line.split(","));
+    }
+
+    const rows = csvToArray(csvData);
+    const headers = rows[0];
+    const data = rows.slice(1);
+
+    const table = document.getElementById("kishi");
+    const theadRow = document.getElementById("header-row");
+    const filterRow = document.getElementById("filter-row");
+    const tbody = document.getElementById("data-body");
+
+    // ヘッダー生成
+    headers.forEach(h => {
+      const th = document.createElement("th");
+      th.textContent = h;
+      th.classList.add("sortable");
+      th.setAttribute("scope","col");
+      theadRow.appendChild(th);
+
+      // フィルタ用入力欄
+      const filterCell = document.createElement("th");
+      const input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = h + "で検索";
+      input.className = "col-filter";
+      filterCell.appendChild(input);
+      filterRow.appendChild(filterCell);
+    });
+
+    // データ描画
+    function renderData(dataArray) {
+      tbody.innerHTML = "";
+      dataArray.forEach(r => {
+        const tr = document.createElement("tr");
+        r.forEach(cell => {
+          const td = document.createElement("td");
+          td.textContent = cell;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+    }
+    renderData(data);
+
+    // === 並び替え処理 ===
+    const collator = new Intl.Collator('ja', { numeric: true, sensitivity: 'base' });
+
+    function makeComparator(getText, direction) {
+      return (a, b) => {
+        const va = getText(a); const vb = getText(b);
+        const isDate = s => /^\d{4}-\d{2}-\d{2}$/.test(s);
+        const isNum  = s => /^-?\d+(\.\d+)?$/.test(s);
+        let cmp = 0;
+        if (isDate(va) && isDate(vb)) {
+          cmp = (new Date(va)) - (new Date(vb));
+        } else if (isNum(va) && isNum(vb)) {
+          cmp = parseFloat(va) - parseFloat(vb);
+        } else {
+          cmp = collator.compare(va, vb);
+        }
+        return direction === 'asc' ? cmp : -cmp;
+      };
+    }
+
+    (function enableSort() {
+      const ths = Array.from(theadRow.querySelectorAll('th.sortable'));
+      ths.forEach(th => th.setAttribute('aria-sort', 'none'));
+
+      ths.forEach((th, colIdx) => {
+        th.addEventListener('click', () => {
+          const current = th.getAttribute('aria-sort');
+          const direction = current === 'ascending' ? 'desc' : 'asc';
+          ths.forEach(h => h.setAttribute('aria-sort', 'none'));
+          th.setAttribute('aria-sort', direction === 'asc' ? 'ascending' : 'descending');
+
+          const rows = Array.from(tbody.rows);
+          const getText = (tr) => tr.cells[colIdx].textContent.trim();
+          rows.sort(makeComparator(getText, direction));
+          rows.forEach(tr => tbody.appendChild(tr));
+        });
+      });
+    })();
+
+    // === 列ごと検索処理 ===
+    const filterInputs = filterRow.querySelectorAll("input.col-filter");
+    filterInputs.forEach((input, colIdx) => {
+      input.addEventListener("input", () => {
+        const conditions = Array.from(filterInputs).map(inp => inp.value.trim().toLowerCase());
+        const filtered = data.filter(row =>
+          row.every((cell, i) => {
+            const kw = conditions[i];
+            return !kw || cell.toLowerCase().includes(kw);
+          })
+        );
+        renderData(filtered);
+      });
+    });
+  </script>
+</body>
+</html>
