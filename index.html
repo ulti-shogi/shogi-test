@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>棋士検索サイト（矢印付き）</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+  th { background: #f2f2f2; cursor: pointer; position: relative; }
+  th .arrow { position: absolute; right: 8px; font-size: 0.8em; }
+  input { margin-bottom: 10px; padding: 5px; width: 100%; box-sizing: border-box; }
+</style>
+</head>
+<body>
+
+<h2>棋士検索サイト（矢印付き）</h2>
+
+<table id="kishiTable">
+  <thead>
+    <tr>
+      <th>棋士番号<span class="arrow"></span></th>
+      <th>氏名<span class="arrow"></span></th>
+      <th>生年月日<span class="arrow"></span></th>
+    </tr>
+    <tr>
+      <th><input type="text" placeholder="検索" /></th>
+      <th><input type="text" placeholder="検索" /></th>
+      <th><input type="text" placeholder="検索" /></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td>藤井聡太</td><td>2002-07-19</td></tr>
+    <tr><td>2</td><td>渡辺明</td><td>1984-10-04</td></tr>
+    <tr><td>3</td><td>羽生善治</td><td>1970-09-27</td></tr>
+    <tr><td>4</td><td>佐藤康光</td><td>1970-07-07</td></tr>
+    <!-- 必要に応じて追加 -->
+  </tbody>
+</table>
+
+<script>
+const table = document.getElementById('kishiTable');
+const tbody = table.querySelector('tbody');
+const headers = table.querySelectorAll('th');
+let sortOrders = Array(headers.length).fill(1);
+
+// ソート機能
+headers.forEach((th, colIndex) => {
+  const arrowSpan = th.querySelector('.arrow');
+  th.addEventListener('click', () => {
+    const rowsArray = Array.from(tbody.querySelectorAll('tr'));
+    rowsArray.sort((a, b) => {
+      const A = a.children[colIndex].textContent;
+      const B = b.children[colIndex].textContent;
+      return A.localeCompare(B, 'ja') * sortOrders[colIndex];
+    });
+    rowsArray.forEach(r => tbody.appendChild(r));
+
+    // 矢印更新
+    headers.forEach(h => h.querySelector('.arrow').textContent = '');
+    arrowSpan.textContent = sortOrders[colIndex] === 1 ? '▲' : '▼';
+
+    // 次回クリック用に反転
+    sortOrders[colIndex] *= -1;
+  });
+});
+
+// 列ごと検索機能
+const filters = table.querySelectorAll('thead input');
+filters.forEach((input, colIndex) => {
+  input.addEventListener('keyup', () => {
+    const filterValues = Array.from(filters).map(f => f.value.toLowerCase());
+    Array.from(tbody.querySelectorAll('tr')).forEach(row => {
+      const cells = Array.from(row.children);
+      const show = cells.every((cell, i) => cell.textContent.toLowerCase().includes(filterValues[i]));
+      row.style.display = show ? '' : 'none';
+    });
+  });
+});
+</script>
+
+</body>
+</html>
