@@ -107,6 +107,24 @@
       }
 
       renderTable();
+            // 初期ソート（棋士番号で昇順）
+      function initialSort() {
+        const colIndex = 3; // 4列目（棋士番号）
+        const rowsArray = Array.from(tbody.querySelectorAll('tr'));
+        rowsArray.sort((a, b) => {
+          const A = a.children[colIndex].textContent;
+          const B = b.children[colIndex].textContent;
+          return A.localeCompare(B, 'ja');
+        });
+        rowsArray.forEach(r => tbody.appendChild(r));
+
+        // 矢印を初期表示
+        table.querySelectorAll('th .arrow').forEach(span => span.textContent = '');
+        headerRow.children[colIndex].querySelector('.arrow').textContent = '▲';
+        sortOrders[colIndex] = -1; // 次のクリックで降順になるように設定
+      }
+
+      initialSort(); // ← 初期ソート実行
     }
 
     loadCSV();
