@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>棋士データ検索</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f2f2f2; cursor: pointer; position: relative; }
+    th .arrow { position: absolute; right: 8px; font-size: 0.8em; }
+    .search-row input { width: 95%; box-sizing: border-box; }
+  </style>
+</head>
+<body>
+  <h2>棋士データ検索（CSV読み込み版）</h2>
+  <table id="kishiTable">
+    <thead>
+      <tr id="headerRow"></tr>
+      <tr class="search-row" id="searchRow"></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    async function loadCSV() {
+      const response = await fetch('kishi.csv');
+      const csvText = await response.text();
+
+      const rows = csvText.trim().split('\n').map(r => r.split(','));
+      const headers = rows[0];
+      const data = rows.slice(1);
+
+      const table = document.getElementById('kishiTable');
+      const thead = table.querySelector('thead');
+      const tbody = table.querySelector('tbody');
+      const headerRow = document.getElementById('headerRow');
+      const searchRow = document.getElementById('searchRow');
+
+      let sortOrders = Array(headers.length).fill(1);
+
+      // ヘッダー作成
+      headers.forEach((header, colIndex) => {
+        const th = document.createElement('th');
+        th.textContent = header;
+
+        const arrowSpan = document.createElement('span');
+        arrowSpan.className = 'arrow';
+        th.appendChild(arrowSpan);
+
+        th.addEventListener('click', () => {
+          const rowsArray = Array.from(tbody.querySelectorAll('tr'));
+          rowsArray.sort((a, b) => {
+            const A = a.children[colIndex].textContent;
+            const B = b.children[colIndex].textContent;
+            return A.localeCompare(B, 'ja') * sortOrders[colIndex];
+          });
+          rowsArray.forEach(r => tbody.appendChild(r));
+
+          // 矢印更新
+          table.querySelectorAll('th .arrow').forEach(span => span.textContent = '');
+          arrowSpan.textContent = sortOrders[colIndex] === 1 ? '▲' : '▼';
+
+          // 次回のために反転
+          sortOrders[colIndex] *= -1;
+        });
+
+        headerRow.appendChild(th);
+
+        // 検索ボックス
+        const searchTh = document.createElement('th');
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = '検索';
+        input.addEventListener('input', () => filterTable());
+        searchTh.appendChild(input);
+        searchRow.appendChild(searchTh);
+      });
+
+      // 本文作成
+      function renderTable() {
+        tbody.innerHTML = '';
+        data.forEach(row => {
+          const tr = document.createElement('tr');
+          row.forEach(cell => {
+            const td = document.createElement('td');
+            td.textContent = cell;
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+      }
+
+      // フィルタリング
+      function filterTable() {
+        const inputs = searchRow.querySelectorAll('input');
+        const rows = tbody.querySelectorAll('tr');
+        rows.forEach(row => {
+          let visible = true;
+          inputs.forEach((input, colIndex) => {
+            if (input.value && !row.children[colIndex].textContent.includes(input.value)) {
+              visible = false;
+            }
+          });
+          row.style.display = visible ? '' : 'none';
+        });
+      }
+
+      renderTable();
+    }
+
+    loadCSV();
+  </script>
+</body>
+</html>
