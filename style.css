@@ -52,3 +52,7 @@ button { border: 1px solid #ccc; background: #fff; border-radius: 8px; }
   th, td { padding: 8px; }
   table { font-size: 15px; }
 }
+
+/* PCテーブル：ソート可能ヘッダと矢印 */
+th.pc-sort { cursor: pointer; position: relative; }
+th .pc-arrow { position: absolute; right: 8px; font-size: 0.8em; }
