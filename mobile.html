@@ -144,6 +144,18 @@ renderMobileInitial();
     ageAtPromotion: '四段昇段時の年齢'
   };
 
+  function renderMobileInitial() {
+  const tbody = document.getElementById('mobile-tbody');
+  const colLabel = document.getElementById('col-label');
+  colLabel.textContent = '基準'; // 未選択時の見出し
+  tbody.innerHTML = people.map(p => `
+    <tr>
+      <td>${p.name}</td>
+      <td></td>
+    </tr>
+  `).join('');
+}
+  
   function applyMobileSort() {
     const criterion = document.getElementById('criterion').value;
     const order = document.querySelector('input[name="ord"]:checked').value; // asc | desc
