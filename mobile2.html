@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>棋士データ（PC/スマホ切替）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="wrapper">
+  <h1>棋士データ</h1>
+
+  <!-- PCビュー：全列テーブル -->
+  <div id="pc-view">
+    <div class="section-title">PCビュー（全列表示）</div>
+    <div id="pc-table-wrap">読み込み中...</div>
+  </div>
+
+  <!-- モバイルビュー：選んだ基準で2列表示 -->
+  <div id="mobile-view">
+    <div class="section-title">スマホビュー（名前＋選択した基準）</div>
+
+    <div class="controls">
+      <select id="criterion">
+        <option value="" selected disabled>-- 並び替え基準を選択 --</option>
+        <option value="kishiNumber">棋士番号</option>
+        <option value="birthdate">生年月日</option>
+        <option value="currentAge">現年齢</option>
+        <option value="ageAtPromotion">四段昇段時の年齢</option>
+      </select>
+
+      <button id="applySort">並び替える</button>
+
+      <div class="order">
+        <label><input type="radio" name="ord" value="asc" checked> 昇順</label>
+        <label><input type="radio" name="ord" value="desc"> 降順</label>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>棋士名</th>
+          <th id="col-label">基準</th>
+        </tr>
+      </thead>
+      <tbody id="mobile-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  // ===== ユーティリティ =====
+  const parseDate = (s) => {
+    const [y, m, d] = (s || '').split('-').map(n => parseInt(n, 10));
+    if (!y || !m || !d) return null;
+    return new Date(y, m - 1, d);
+  };
+  const formatAge = (birth, ref = new Date()) => {
+    if (!birth) return null;
+    let age = ref.getFullYear() - birth.getFullYear();
+    const notYet = (ref.getMonth() < birth.getMonth()) ||
+                   (ref.getMonth() === birth.getMonth() && ref.getDate() < birth.getDate());
+    if (notYet) age--;
+    return age;
+  };
+  const ageAtDate = (birth, date) => {
+    if (!birth || !date) return null;
+    let age = date.getFullYear() - birth.getFullYear();
+    const notYet = (date.getMonth() < birth.getMonth()) ||
+                   (date.getMonth() === birth.getMonth() && date.getDate() < birth.getDate());
+    if (notYet) age--;
+    return age;
+  };
+  const toHalf = (s) => (s || '').replace(/[！-～]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
+  const toNumber = (s) => {
+    const half = toHalf((s || '').trim());
+    const onlyDigits = half.replace(/[^\d.-]/g, '');
+    const n = Number(onlyDigits);
+    return Number.isFinite(n) ? n : Number.POSITIVE_INFINITY;
+  };
+
+  // ===== データ格納 =====
+  let people = [];      // [{ name, birthStr, promStr, noStr, noNum, birth, prom, currentAge, ageAtPromotion }]
+  let headers = [];     // CSVヘッダー
+  let rowsRaw = [];     // CSV本体（表示用PCテーブル）
+
+  // ===== CSV読み込み =====
+  fetch('kishi.csv')
+    .then(r => r.text())
+    .then(text => {
+      const lines = text.trim().split('\n').map(l => l.split(','));
+      headers = lines[0].map(h => h.trim());     // ヘッダー正規化
+      rowsRaw = lines.slice(1);
+
+      // 固定ヘッダー名（あなたのCSV定義）
+      const nameIdx  = headers.indexOf('棋士名');
+      const birthIdx = headers.indexOf('生年月日');
+      const promoIdx = headers.indexOf('四段昇段日');
+      const numIdx   = headers.indexOf('棋士番号');
+      if ([nameIdx, birthIdx, promoIdx, numIdx].some(i => i < 0)) {
+        throw new Error('CSVの見出し名が想定と異なります（棋士名/生年月日/四段昇段日/棋士番号）');
+      }
+
+      people = rowsRaw.map(cols => {
+        const name     = (cols[nameIdx]  || '').trim();
+        const birthStr = (cols[birthIdx] || '').trim();
+        const promStr  = (cols[promoIdx] || '').trim();
+        const noStr    = (cols[numIdx]   || '').trim();
+        const birth = parseDate(birthStr);
+        const prom  = parseDate(promStr);
+        return {
+          name,
+          birthStr, promStr,
+          noStr,                  // 表示用
+          noNum: toNumber(noStr), // 並び替え用（数値）
+          birth, prom,
+          currentAge: formatAge(birth),
+          ageAtPromotion: ageAtDate(birth, prom)
+        };
+      });
+
+      // PCテーブル描画（全列）
+      renderPCTable(headers, rowsRaw);
+      // モバイル初期表示（名前だけ・CSV順）
+      renderMobileInitial();
+    })
+    .catch(err => {
+      document.getElementById('pc-table-wrap').textContent = 'CSV読み込み失敗: ' + err;
+    });
+
+  // ===== PCテーブル（全列表示） =====
+  function renderPCTable(headers, rows) {
+    const html = `
+      <table>
+        <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+        <tbody>
+          ${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}
+        </tbody>
+      </table>`;
+    document.getElementById('pc-table-wrap').innerHTML = html;
+  }
+
+  // ===== モバイル：初期（名前のみ） =====
+  function renderMobileInitial() {
+    const tbody = document.getElementById('mobile-tbody');
+    const colLabel = document.getElementById('col-label');
+    colLabel.textContent = '基準'; // 未選択時
+    if (!people.length) { tbody.innerHTML = ''; return; }
+    tbody.innerHTML = people.map(p => `
+      <tr>
+        <td>${p.name}</td>
+        <td></td>
+      </tr>
+    `).join('');
+  }
+
+  // ===== モバイル：並び替え =====
+  const labelMap = {
+    kishiNumber: '棋士番号',
+    birthdate: '生年月日',
+    currentAge: '現年齢',
+    ageAtPromotion: '四段昇段時の年齢'
+  };
+
+  function applyMobileSort() {
+    const criterion = document.getElementById('criterion').value;
+    if (!criterion) { return; } // 未選択なら何もしない
+    const order = document.querySelector('input[name="ord"]:checked').value; // asc | desc
+    const tbody = document.getElementById('mobile-tbody');
+    const colLabel = document.getElementById('col-label');
+    colLabel.textContent = labelMap[criterion];
+
+    const key = (p) => {
+      switch (criterion) {
+        case 'kishiNumber':    return p.noNum;
+        case 'birthdate':      return p.birth ? p.birth.getTime() : Number.POSITIVE_INFINITY;
+        case 'currentAge':     return (p.currentAge ?? Number.POSITIVE_INFINITY);
+        case 'ageAtPromotion': return (p.ageAtPromotion ?? Number.POSITIVE_INFINITY);
+        default: return 0;
+      }
+    };
+
+    const sorted = [...people].sort((a, b) => {
+      const A = key(a), B = key(b);
+      if (A === B) return 0;
+      return (A < B ? -1 : 1) * (order === 'asc' ? 1 : -1);
+    });
+
+    tbody.innerHTML = sorted.map(p => `
+      <tr>
+        <td>${p.name}</td>
+        <td>${
+          criterion === 'kishiNumber'    ? (p.noStr ?? '') :
+          criterion === 'birthdate'      ? (p.birthStr ?? '') :
+          criterion === 'currentAge'     ? (p.currentAge != null ? `${p.currentAge}歳` : '') :
+                                           (p.ageAtPromotion != null ? `${p.ageAtPromotion}歳` : '')
+        }</td>
+      </tr>
+    `).join('');
+  }
+
+  document.getElementById('applySort').addEventListener('click', applyMobileSort);
+</script>
+</body>
+</html>
