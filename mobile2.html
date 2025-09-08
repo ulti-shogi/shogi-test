@@ -130,16 +130,81 @@
     });
 
   // ===== PCテーブル（全列表示） =====
-  function renderPCTable(headers, rows) {
-    const html = `
-      <table>
-        <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
-        <tbody>
-          ${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}
-        </tbody>
-      </table>`;
-    document.getElementById('pc-table-wrap').innerHTML = html;
-  }
+  // 置き換え：PCテーブル描画（全列＋ソート矢印付き）
+function renderPCTable(headers, rows) {
+  const html = `
+    <table id="pc-table">
+      <thead>
+        <tr>
+          ${headers.map(h => `<th class="pc-sort">${h}<span class="pc-arrow"></span></th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}
+      </tbody>
+    </table>`;
+  document.getElementById('pc-table-wrap').innerHTML = html;
+
+  attachPcSort(headers); // ← ソート付与
+}
+
+// 追加：PCテーブルにソート挙動を付与
+function attachPcSort(headers) {
+  const table = document.getElementById('pc-table');
+  const tbody = table.querySelector('tbody');
+  const ths = table.querySelectorAll('th.pc-sort');
+  let sortOrders = Array(headers.length).fill(1); // 1: 昇順 → -1: 降順
+
+  // 列タイプ推定（数字/日付/文字）
+  const typeOf = (i) => {
+    const h = headers[i] || '';
+    if (h.includes('番号')) return 'num';
+    if (h.includes('生年月日') || h.includes('昇段')) return 'date';
+    return 'str';
+  };
+
+  ths.forEach((th, colIndex) => {
+    const arrow = th.querySelector('.pc-arrow');
+
+    th.addEventListener('click', () => {
+      const rowsArr = Array.from(tbody.querySelectorAll('tr'));
+      const typ = typeOf(colIndex);
+
+      rowsArr.sort((a, b) => {
+        let A = a.children[colIndex].textContent.trim();
+        let B = b.children[colIndex].textContent.trim();
+
+        if (typ === 'num') {
+          const nA = Number(A.replace(/[^\d.-]/g, ''));
+          const nB = Number(B.replace(/[^\d.-]/g, ''));
+          A = Number.isFinite(nA) ? nA : Number.POSITIVE_INFINITY;
+          B = Number.isFinite(nB) ? nB : Number.POSITIVE_INFINITY;
+        } else if (typ === 'date') {
+          const tA = new Date(A).getTime();
+          const tB = new Date(B).getTime();
+          A = Number.isFinite(tA) ? tA : Number.POSITIVE_INFINITY;
+          B = Number.isFinite(tB) ? tB : Number.POSITIVE_INFINITY;
+        } else {
+          // 文字列は localeCompare
+          return A.localeCompare(B, 'ja') * sortOrders[colIndex];
+        }
+
+        // 数値/日付
+        return (A === B ? 0 : (A < B ? -1 : 1)) * sortOrders[colIndex];
+      });
+
+      rowsArr.forEach(r => tbody.appendChild(r));
+
+      // 矢印更新
+      table.querySelectorAll('.pc-arrow').forEach(s => s.textContent = '');
+      arrow.textContent = sortOrders[colIndex] === 1 ? '▲' : '▼';
+
+      // 次回反転
+      sortOrders[colIndex] *= -1;
+    });
+  });
+}
+
 
   // ===== モバイル：初期（名前のみ） =====
   function renderMobileInitial() {
