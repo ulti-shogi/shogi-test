@@ -158,6 +158,10 @@ renderMobileInitial();
   
   function applyMobileSort() {
     const criterion = document.getElementById('criterion').value;
+  if (!criterion) {
+    // 何も選んでいなければ何もしない（アラートなし）
+    return;
+    const criterion = document.getElementById('criterion').value;
     const order = document.querySelector('input[name="ord"]:checked').value; // asc | desc
     const tbody = document.getElementById('mobile-tbody');
     const colLabel = document.getElementById('col-label');
