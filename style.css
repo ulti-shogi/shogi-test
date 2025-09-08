@@ -1,0 +1,54 @@
+/* ====== ベース ====== */
+:root {
+  --max-width: 980px;
+}
+body {
+  font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", "Noto Sans JP", sans-serif;
+  margin: 20px;
+}
+.wrapper {
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+h1 { font-size: 1.25rem; margin: 0 0 12px; }
+.section-title { font-weight: 600; margin: 16px 0 8px; }
+
+/* 共通テーブル */
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 8px 10px; text-align: left; }
+th { background: #f7f7f7; }
+
+/* コントロール（スマホで触りやすく） */
+.controls {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0 12px;
+}
+.controls .order {
+  display: flex; gap: 10px; align-items: center; justify-content: flex-start;
+  grid-column: 1 / -1;
+}
+select, button {
+  padding: 10px 12px;
+  font-size: 16px;
+}
+button { border: 1px solid #ccc; background: #fff; border-radius: 8px; }
+
+/* ====== レイアウト切替 ====== */
+/* PC（幅800px以上）: PCビュー表示、モバイルビュー非表示 */
+@media (min-width: 800px) {
+  #pc-view   { display: block; }
+  #mobile-view { display: none; }
+}
+
+/* スマホ（幅799px以下）: モバイルビュー表示、PCビュー非表示 */
+@media (max-width: 799px) {
+  #pc-view   { display: none; }
+  #mobile-view { display: block; }
+
+  /* モバイル向け少し文字詰め */
+  th, td { padding: 8px; }
+  table { font-size: 15px; }
+}
