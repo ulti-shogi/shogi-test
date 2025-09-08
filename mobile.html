@@ -114,10 +114,9 @@
       });
 
       renderPCTable(headers, rows);
-      // モバイル初期表示：棋士番号 昇順
-      document.getElementById('criterion').value = 'kishiNumber';
-      document.querySelector('input[name="ord"][value="asc"]').checked = true;
-      applyMobileSort();
+      
+      // （追加）最初は「棋士名のみ」表示
+renderMobileInitial();
     })
     .catch(err => {
       document.getElementById('pc-table-wrap').textContent = 'CSV読み込み失敗: ' + err;
