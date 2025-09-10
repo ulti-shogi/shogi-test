@@ -50,6 +50,33 @@
 </div>
 
 <script>
+  // 2つの日付の差を「年・月・日」で返す（うるう年・月末を考慮）
+function diffYMD(start, end) {
+  if (!start || !end) return null;
+  let y = end.getFullYear() - start.getFullYear();
+  let m = end.getMonth() - start.getMonth();
+  let d = end.getDate() - start.getDate();
+
+  // 日がマイナスなら前月から日数を借りる
+  if (d < 0) {
+    const prevMonthLast = new Date(end.getFullYear(), end.getMonth(), 0); // 前月末日
+    d += prevMonthLast.getDate();
+    m -= 1;
+  }
+  // 月がマイナスなら前年から借りる
+  if (m < 0) {
+    m += 12;
+    y -= 1;
+  }
+  return { y, m, d };
+}
+
+// 人が読める "◯歳◯ヶ月◯日" 文字列
+function formatYMD(parts) {
+  if (!parts) return '';
+  return `${parts.y}歳${parts.m}ヶ月${parts.d}日`;
+}
+
   // ===== ユーティリティ =====
   const parseDate = (s) => {
     const [y, m, d] = (s || '').split('-').map(n => parseInt(n, 10));
