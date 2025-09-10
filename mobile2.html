@@ -258,12 +258,14 @@ function attachPcSort(headers) {
     const colLabel = document.getElementById('col-label');
     colLabel.textContent = '基準'; // 未選択時
     if (!people.length) { tbody.innerHTML = ''; return; }
-    tbody.innerHTML = people.map(p => `
-      <tr>
-        <td>${p.name}</td>
-        <td></td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = people.map((p, i) => `
+  <tr>
+    <td class="rank">${i + 1}</td>
+    <td>${p.name}</td>
+    <td></td>
+  </tr>
+`).join('');
+
   }
 
   // ===== モバイル：並び替え =====
