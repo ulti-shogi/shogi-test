@@ -56,3 +56,9 @@ button { border: 1px solid #ccc; background: #fff; border-radius: 8px; }
 /* PCテーブル：ソート可能ヘッダと矢印 */
 th.pc-sort { cursor: pointer; position: relative; }
 th .pc-arrow { position: absolute; right: 8px; font-size: 0.8em; }
+
+/* 順位列をコンパクトに中央寄せ */
+td.rank, th:nth-child(1) {
+  text-align: center;
+  white-space: nowrap;
+}
