@@ -300,8 +300,9 @@ function attachPcSort(headers) {
       return (A < B ? -1 : 1) * (order === 'asc' ? 1 : -1);
     });
 
-    tbody.innerHTML = sorted.map(p => `
+    tbody.innerHTML = sorted.map((p, i) => `
   <tr>
+    <td class="rank">${i + 1}</td>
     <td>${p.name}</td>
     <td>${
       criterion === 'kishiNumber'    ? (p.noStr ?? '') :
@@ -311,6 +312,7 @@ function attachPcSort(headers) {
     }</td>
   </tr>
 `).join('');
+
   }
 
   document.getElementById('applySort').addEventListener('click', applyMobileSort);
