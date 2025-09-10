@@ -282,14 +282,14 @@ function attachPcSort(headers) {
     colLabel.textContent = labelMap[criterion];
 
     const key = (p) => {
-      switch (criterion) {
-        case 'kishiNumber':    return p.noNum;
-        case 'birthdate':      return p.birth ? p.birth.getTime() : Number.POSITIVE_INFINITY;
-        case 'currentAge':     return (p.currentAge ?? Number.POSITIVE_INFINITY);
-        case 'ageAtPromotion': return (p.ageAtPromotion ?? Number.POSITIVE_INFINITY);
-        default: return 0;
-      }
-    };
+  switch (criterion) {
+    case 'kishiNumber':    return p.noNum;
+    case 'birthdate':      return p.birth ? p.birth.getTime() : Number.POSITIVE_INFINITY;
+    case 'currentAge':     return p.currentAgeDays;
+    case 'ageAtPromotion': return p.promoAgeDays;
+    default: return 0;
+  }
+};
 
     const sorted = [...people].sort((a, b) => {
       const A = key(a), B = key(b);
@@ -298,16 +298,16 @@ function attachPcSort(headers) {
     });
 
     tbody.innerHTML = sorted.map(p => `
-      <tr>
-        <td>${p.name}</td>
-        <td>${
-          criterion === 'kishiNumber'    ? (p.noStr ?? '') :
-          criterion === 'birthdate'      ? (p.birthStr ?? '') :
-          criterion === 'currentAge'     ? (p.currentAge != null ? `${p.currentAge}歳` : '') :
-                                           (p.ageAtPromotion != null ? `${p.ageAtPromotion}歳` : '')
-        }</td>
-      </tr>
-    `).join('');
+  <tr>
+    <td>${p.name}</td>
+    <td>${
+      criterion === 'kishiNumber'    ? (p.noStr ?? '') :
+      criterion === 'birthdate'      ? (p.birthStr ?? '') :
+      criterion === 'currentAge'     ? (p.currentAgeParts ? formatYMD(p.currentAgeParts) : '') :
+                                       (p.promoAgeParts   ? formatYMD(p.promoAgeParts)   : '')
+    }</td>
+  </tr>
+`).join('');
   }
 
   document.getElementById('applySort').addEventListener('click', applyMobileSort);
