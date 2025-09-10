@@ -130,22 +130,40 @@ function formatYMD(parts) {
       }
 
       people = rowsRaw.map(cols => {
-        const name     = (cols[nameIdx]  || '').trim();
-        const birthStr = (cols[birthIdx] || '').trim();
-        const promStr  = (cols[promoIdx] || '').trim();
-        const noStr    = (cols[numIdx]   || '').trim();
-        const birth = parseDate(birthStr);
-        const prom  = parseDate(promStr);
-        return {
-          name,
-          birthStr, promStr,
-          noStr,                  // 表示用
-          noNum: toNumber(noStr), // 並び替え用（数値）
-          birth, prom,
-          currentAge: formatAge(birth),
-          ageAtPromotion: ageAtDate(birth, prom)
-        };
-      });
+  const name     = (cols[nameIdx]  || '').trim();
+  const birthStr = (cols[birthIdx] || '').trim();
+  const promStr  = (cols[promoIdx] || '').trim();
+  const noStr    = (cols[numIdx]   || '').trim();
+
+  const birth = parseDate(birthStr);
+  const prom  = parseDate(promStr);
+  const today = new Date();
+
+  // 年月日パーツ
+  const currentAgeParts = birth ? diffYMD(birth, today) : null;
+  const promoAgeParts   = (birth && prom) ? diffYMD(birth, prom) : null;
+
+  // 並び替え用の“日数”キー（厳密な比較用）
+  const currentAgeDays = birth ? Math.floor((today - birth) / 86400000) : Number.POSITIVE_INFINITY;
+  const promoAgeDays   = (birth && prom) ? Math.floor((prom - birth) / 86400000) : Number.POSITIVE_INFINITY;
+
+  // 棋士番号の数値キー
+  const noNum = toNumber(noStr);
+
+  return {
+    name,
+    birthStr, promStr, noStr,
+    birth, prom,
+    // 表示用（◯歳◯ヶ月◯日）
+    currentAgeParts,
+    promoAgeParts,
+    // ソート用
+    currentAgeDays,
+    promoAgeDays,
+    noNum
+  };
+});
+
 
       // PCテーブル描画（全列）
       renderPCTable(headers, rowsRaw);
