@@ -288,6 +288,10 @@
     window.addEventListener('resize', showLayout);
     window.addEventListener('load', async () => {
       await loadData();
+
+// ▼ここを追加（people配列の行数を確認）
+  console.log("people.length =", people.length);
+      
       showLayout();
       document.getElementById('searchBox').addEventListener('input', applyPCSearch);
     });
