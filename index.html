@@ -263,8 +263,7 @@
           <td class="rank">${i+1}</td>
           <td>${p.name}</td>
           <td>${
-            criterion === 'kishiNumber'
-  ? (p.noStr && p.noStr.trim() !== "" ? p.noStr : (isFinite(p.noNum) ? p.noNum : "")) :
+            criterion === 'kishiNumber' ? (p.noStr ?? '') :
             criterion === 'birthdate' ? (p.birthStr ?? '') :
             criterion === 'currentAge' ? (p.currentAgeParts ? formatYMD(p.currentAgeParts) : '') :
             criterion === 'ageAtPromotion' ? (p.promoAgeParts ? formatYMD(p.promoAgeParts) : '') : ''
