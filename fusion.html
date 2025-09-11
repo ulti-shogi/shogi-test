@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>棋士データ検索</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>棋士データ検索</h1>
+  
+  <div id="pc-container" style="display:none;">
+    <!-- PC版のテーブル（今のindex.htmlの内容） -->
+    <table id="pc-table">
+      <thead>
+        <tr>
+          <th data-key="name">棋士名</th>
+          <th data-key="birth">生年月日</th>
+          <th data-key="promo">四段昇段日</th>
+          <th data-key="no">棋士番号</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div id="mobile-container" style="display:none;">
+    <!-- スマホ版のUI（今のmobile2.htmlのセレクト＋2列テーブル） -->
+    <label for="sort-select">並び替え基準:</label>
+    <select id="sort-select">
+      <option value="">-- 選択してください --</option>
+      <option value="kishiNumber">棋士番号</option>
+      <option value="birthdate">生年月日</option>
+      <option value="currentAge">現年齢</option>
+      <option value="ageAtPromotion">四段昇段時年齢</option>
+    </select>
+    <button onclick="applyMobileSort()">並び替え</button>
+
+    <table id="mobile-table">
+      <thead>
+        <tr>
+          <th style="width:3.5em;">順位</th>
+          <th>棋士名</th>
+          <th id="col-label"></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    // 幅で判定
+    function isMobile() {
+      return window.innerWidth <= 768; // お好みで調整
+    }
+
+    function showLayout() {
+      if (isMobile()) {
+        document.getElementById('mobile-container').style.display = '';
+        document.getElementById('pc-container').style.display = 'none';
+        initMobile();  // mobile2.html の初期化関数を呼ぶ
+      } else {
+        document.getElementById('pc-container').style.display = '';
+        document.getElementById('mobile-container').style.display = 'none';
+        initPC(); // index.html の初期化関数を呼ぶ
+      }
+    }
+
+    window.addEventListener('resize', showLayout);
+    window.addEventListener('load', showLayout);
+  </script>
+</body>
+</html>
