@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>棋士データ検索</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* PC・スマホ切り替えのための簡単な調整 */
+    #pc-container, #mobile-container {
+      display: none;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 4px;
+      text-align: left;
+    }
+    th.sortable {
+      cursor: pointer;
+    }
+    th.sortable::after {
+      content: " ⇅";
+      font-size: 0.8em;
+      color: #888;
+    }
+    th.sorted-asc::after {
+      content: " ▲";
+      color: #000;
+    }
+    th.sorted-desc::after {
+      content: " ▼";
+      color: #000;
+    }
+    td.rank, th.rank {
+      text-align: center;
+      width: 3em;
+    }
+    .controls {
+      margin: 0.5em 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>棋士データ検索</h1>
+
+  <!-- PC版 -->
+  <div id="pc-container">
+    <div class="controls">
+      <input type="text" id="searchBox" placeholder="検索...">
+    </div>
+    <table id="pc-table">
+      <thead>
+        <tr>
+          <th class="sortable" data-key="name">棋士名</th>
+          <th class="sortable" data-key="birth">生年月日</th>
+          <th class="sortable" data-key="promo">四段昇段日</th>
+          <th class="sortable" data-key="no">棋士番号</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- スマホ版 -->
+  <div id="mobile-container">
+    <div class="controls">
+      <label for="sort-select">並び替え基準:</label>
+      <select id="sort-select">
+        <option value="">-- 選択してください --</option>
+        <option value="kishiNumber">棋士番号</option>
+        <option value="birthdate">生年月日</option>
+        <option value="currentAge">現年齢</option>
+        <option value="ageAtPromotion">四段昇段時年齢</option>
+      </select>
+      <button onclick="setSortOrder('asc')">昇順</button>
+      <button onclick="setSortOrder('desc')">降順</button>
+      <button onclick="applyMobileSort()">並び替え</button>
+    </div>
+    <table id="mobile-table">
+      <thead>
+        <tr>
+          <th class="rank">順位</th>
+          <th>棋士名</th>
+          <th id="col-label"></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    let people = [];
+    let currentSortOrder = 'asc';
+
+    function parseDate(str) {
+      const d = new Date(str);
+      return isNaN(d) ? null : d;
+    }
+    function toNumber(str) {
+      const n = Number(str);
+      return isNaN(n) ? Number.POSITIVE_INFINITY : n;
+    }
+    function diffYMD(start, end) {
+      if (!start || !end) return null;
+      let y = end.getFullYear() - start.getFullYear();
+      let m = end.getMonth() - start.getMonth();
+      let d = end.getDate() - start.getDate();
+      if (d < 0) {
+        const prevMonthLast = new Date(end.getFullYear(), end.getMonth(), 0);
+        d += prevMonthLast.getDate();
+        m -= 1;
+      }
+      if (m < 0) {
+        m += 12;
+        y -= 1;
+      }
+      return { y, m, d };
+    }
+    function formatYMD(parts) {
+      if (!parts) return '';
+      return `${parts.y}歳${parts.m}ヶ月${parts.d}日`;
+    }
+
+    async function loadData() {
+      const res = await fetch('kishi.csv');
+      const text = await res.text();
+      const rowsRaw = text.trim().split('\n').map(r => r.split(','));
+      const header = rowsRaw.shift();
+      const nameIdx = header.indexOf('棋士名');
+      const birthIdx = header.indexOf('生年月日');
+      const promoIdx = header.indexOf('四段昇段日');
+      const numIdx = header.indexOf('棋士番号');
+
+      people = rowsRaw.map(cols => {
+        const name = (cols[nameIdx] || '').trim();
+        const birthStr = (cols[birthIdx] || '').trim();
+        const promStr = (cols[promoIdx] || '').trim();
+        const noStr = (cols[numIdx] || '').trim();
+        const birth = parseDate(birthStr);
+        const prom = parseDate(promStr);
+        const today = new Date();
+
+        return {
+          name, birthStr, promStr, noStr,
+          birth, prom,
+          currentAgeParts: birth ? diffYMD(birth, today) : null,
+          promoAgeParts: (birth && prom) ? diffYMD(birth, prom) : null,
+          currentAgeDays: birth ? Math.floor((today - birth) / 86400000) : Number.POSITIVE_INFINITY,
+          promoAgeDays: (birth && prom) ? Math.floor((prom - birth) / 86400000) : Number.POSITIVE_INFINITY,
+          noNum: toNumber(noStr)
+        };
+      });
+    }
+
+    // PC版描画
+    function renderPC() {
+      const tbody = document.querySelector('#pc-table tbody');
+      tbody.innerHTML = people.map(p => `
+        <tr>
+          <td>${p.name}</td>
+          <td>${p.birthStr}</td>
+          <td>${p.promStr}</td>
+          <td>${p.noStr}</td>
+        </tr>
+      `).join('');
+    }
+
+    function applyPCSearch() {
+      const q = document.getElementById('searchBox').value.trim();
+      const tbody = document.querySelector('#pc-table tbody');
+      const filtered = people.filter(p =>
+        p.name.includes(q) || p.birthStr.includes(q) || p.promStr.includes(q) || p.noStr.includes(q)
+      );
+      tbody.innerHTML = filtered.map(p => `
+        <tr>
+          <td>${p.name}</td>
+          <td>${p.birthStr}</td>
+          <td>${p.promStr}</td>
+          <td>${p.noStr}</td>
+        </tr>
+      `).join('');
+    }
+
+    function attachPCSort() {
+      const headers = document.querySelectorAll('#pc-table th.sortable');
+      headers.forEach(h => {
+        h.addEventListener('click', () => {
+          const key = h.dataset.key;
+          const isAsc = !h.classList.contains('sorted-asc');
+          headers.forEach(hh => hh.classList.remove('sorted-asc', 'sorted-desc'));
+          h.classList.add(isAsc ? 'sorted-asc' : 'sorted-desc');
+
+          const sorted = [...people].sort((a, b) => {
+            let av, bv;
+            if (key === 'name') { av = a.name; bv = b.name; }
+            if (key === 'birth') { av = a.birth ? a.birth.getTime() : 0; bv = b.birth ? b.birth.getTime() : 0; }
+            if (key === 'promo') { av = a.prom ? a.prom.getTime() : 0; bv = b.prom ? b.prom.getTime() : 0; }
+            if (key === 'no') { av = a.noNum; bv = b.noNum; }
+            return isAsc ? (av > bv ? 1 : -1) : (av > bv ? -1 : 1);
+          });
+          const tbody = document.querySelector('#pc-table tbody');
+          tbody.innerHTML = sorted.map(p => `
+            <tr>
+              <td>${p.name}</td>
+              <td>${p.birthStr}</td>
+              <td>${p.promStr}</td>
+              <td>${p.noStr}</td>
+            </tr>
+          `).join('');
+        });
+      });
+    }
+
+    // スマホ版描画
+    function renderMobileInitial() {
+      const tbody = document.querySelector('#mobile-table tbody');
+      tbody.innerHTML = people.map((p, i) => `
+        <tr>
+          <td class="rank">${i+1}</td>
+          <td>${p.name}</td>
+          <td></td>
+        </tr>
+      `).join('');
+    }
+
+    function setSortOrder(order) {
+      currentSortOrder = order;
+    }
+
+    function applyMobileSort() {
+      const criterion = document.getElementById('sort-select').value;
+      const labelMap = {
+        kishiNumber: "棋士番号",
+        birthdate: "生年月日",
+        currentAge: "現年齢",
+        ageAtPromotion: "四段昇段時年齢"
+      };
+      document.getElementById('col-label').textContent = labelMap[criterion] || "";
+
+      const sorted = [...people].sort((a,b) => {
+        let av, bv;
+        switch (criterion) {
+          case 'kishiNumber': av = a.noNum; bv = b.noNum; break;
+          case 'birthdate': av = a.birth ? a.birth.getTime() : Infinity; bv = b.birth ? b.birth.getTime() : Infinity; break;
+          case 'currentAge': av = a.currentAgeDays; bv = b.currentAgeDays; break;
+          case 'ageAtPromotion': av = a.promoAgeDays; bv = b.promoAgeDays; break;
+          default: av = 0; bv = 0;
+        }
+        return currentSortOrder === 'asc' ? av - bv : bv - av;
+      });
+
+      const tbody = document.querySelector('#mobile-table tbody');
+      tbody.innerHTML = sorted.map((p,i) => `
+        <tr>
+          <td class="rank">${i+1}</td>
+          <td>${p.name}</td>
+          <td>${
+            criterion === 'kishiNumber' ? (p.noStr ?? '') :
+            criterion === 'birthdate' ? (p.birthStr ?? '') :
+            criterion === 'currentAge' ? (p.currentAgeParts ? formatYMD(p.currentAgeParts) : '') :
+            criterion === 'ageAtPromotion' ? (p.promoAgeParts ? formatYMD(p.promoAgeParts) : '') : ''
+          }</td>
+        </tr>
+      `).join('');
+    }
+
+    function showLayout() {
+      if (window.innerWidth <= 768) {
+        document.getElementById('mobile-container').style.display = '';
+        document.getElementById('pc-container').style.display = 'none';
+        renderMobileInitial();
+      } else {
+        document.getElementById('pc-container').style.display = '';
+        document.getElementById('mobile-container').style.display = 'none';
+        renderPC();
+        attachPCSort();
+      }
+    }
+
+    document.getElementById('searchBox')?.addEventListener('input', applyPCSearch);
+
+    window.addEventListener('resize', showLayout);
+    window.addEventListener('load', async () => {
+      await loadData();
+      showLayout();
+    });
+  </script>
+</body>
+</html>
