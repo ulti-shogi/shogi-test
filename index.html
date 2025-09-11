@@ -127,6 +127,10 @@
     async function loadData() {
       const res = await fetch('kishi.csv');
       const text = await res.text();
+
+      // ▼ここを追加（CSVがちゃんと取れているか確認用）
+  console.log("CSV先頭100文字:", text.slice(0, 100));
+      
       const rowsRaw = text.trim().split('\n').map(r => r.split(','));
       const header = rowsRaw.shift();
       const nameIdx = header.indexOf('棋士名');
