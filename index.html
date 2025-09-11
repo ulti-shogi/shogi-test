@@ -1,55 +1,37 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>棋士データ検索</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
   <style>
-    #pc-container, #mobile-container {
-      display: none;
+    /* モバイルを基本表示、PC幅だけPC版を表示 */
+    #mobile-container { display: block; }
+    #pc-container { display: none; }
+
+    @media (min-width: 769px) {
+      #mobile-container { display: none; }
+      #pc-container { display: block; }
     }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 4px;
-      text-align: left;
-    }
-    th.sortable {
-      cursor: pointer;
-    }
-    th.sortable::after {
-      content: " ⇅";
-      font-size: 0.8em;
-      color: #888;
-    }
-    th.sorted-asc::after {
-      content: " ▲";
-      color: #000;
-    }
-    th.sorted-desc::after {
-      content: " ▼";
-      color: #000;
-    }
-    td.rank, th.rank {
-      text-align: center;
-      width: 3em;
-    }
-    .controls {
-      margin: 0.5em 0;
-    }
+
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 4px; text-align: left; }
+    th.sortable { cursor: pointer; }
+    th.sortable::after { content: " ⇅"; font-size: .8em; color: #888; }
+    th.sorted-asc::after { content: " ▲"; color: #000; }
+    th.sorted-desc::after { content: " ▼"; color: #000; }
+    td.rank, th.rank { text-align: center; width: 3em; }
+    .controls { margin: .5em 0; }
   </style>
 </head>
 <body>
   <h1>棋士データ検索</h1>
 
-  <!-- PC版 -->
+  <!-- PC版（検索＋ヘッダクリックソート＋棋士番号表示） -->
   <div id="pc-container">
     <div class="controls">
-      <input type="text" id="searchBox" placeholder="検索...">
+      <input type="text" id="searchBox" placeholder="検索..." />
     </div>
     <table id="pc-table">
       <thead>
@@ -64,7 +46,7 @@
     </table>
   </div>
 
-  <!-- スマホ版 -->
+  <!-- モバイル版（mobile2.htmlの挙動をそのまま） -->
   <div id="mobile-container">
     <div class="controls">
       <label for="sort-select">並び替え基準:</label>
@@ -75,9 +57,9 @@
         <option value="currentAge">現年齢</option>
         <option value="ageAtPromotion">四段昇段時年齢</option>
       </select>
-      <button onclick="setSortOrder('asc')">昇順</button>
-      <button onclick="setSortOrder('desc')">降順</button>
-      <button onclick="applyMobileSort()">並び替え</button>
+      <button type="button" onclick="setSortOrder('asc')">昇順</button>
+      <button type="button" onclick="setSortOrder('desc')">降順</button>
+      <button type="button" onclick="applyMobileSort()">並び替え</button>
     </div>
     <table id="mobile-table">
       <thead>
@@ -92,6 +74,7 @@
   </div>
 
   <script>
+    /* ===== データ共通（mobile2の考えを踏襲） ===== */
     let people = [];
     let currentSortOrder = 'asc';
 
@@ -126,26 +109,25 @@
 
     async function loadData() {
       const res = await fetch('kishi.csv');
+      if (!res.ok) throw new Error('CSV読み込み失敗: ' + res.status);
       const text = await res.text();
+      const rowsRaw = text.trim().split(/\r?\n/).map(r => r.split(','));
+      const header = rowsRaw.shift().map(h => h.trim());
 
-      // ▼ここを追加（CSVがちゃんと取れているか確認用）
-  console.log("CSV先頭100文字:", text.slice(0, 100));
-      
-      const rowsRaw = text.trim().split('\n').map(r => r.split(','));
-      const header = rowsRaw.shift();
-      const nameIdx = header.indexOf('棋士名');
-      const birthIdx = header.indexOf('生年月日');
-      const promoIdx = header.indexOf('四段昇段日');
-      const numIdx = header.indexOf('棋士番号');
+      const nameIdx  = header.findIndex(h => h === '棋士名');
+      const birthIdx = header.findIndex(h => h === '生年月日');
+      const promoIdx = header.findIndex(h => h === '四段昇段日');
+      const numIdx   = header.findIndex(h => h === '棋士番号');
 
+      const today = new Date();
       people = rowsRaw.map(cols => {
-        const name = (cols[nameIdx] || '').trim();
+        const name     = (cols[nameIdx]  || '').trim();
         const birthStr = (cols[birthIdx] || '').trim();
-        const promStr = (cols[promoIdx] || '').trim();
-        const noStr = (cols[numIdx] || '').trim();
+        const promStr  = (cols[promoIdx] || '').trim();
+        const noStr    = (cols[numIdx]   || '').trim();
+
         const birth = parseDate(birthStr);
-        const prom = parseDate(promStr);
-        const today = new Date();
+        const prom  = parseDate(promStr);
 
         return {
           name, birthStr, promStr, noStr,
@@ -159,82 +141,20 @@
       });
     }
 
-    // PC版
-    function renderPC() {
-  const tbody = document.querySelector('#pc-table tbody');
-  tbody.innerHTML = people.map(p => `
-    <tr>
-      <td>${p.name}</td>
-      <td>${p.birthStr}</td>
-      <td>${p.promStr}</td>
-      <td>${p.noStr}</td>  <!-- ← noStr に戻す -->
-    </tr>
-  `).join('');
-}
-
-    function applyPCSearch() {
-      const q = document.getElementById('searchBox').value.trim();
-      const filtered = people.filter(p =>
-        p.name.includes(q) || p.birthStr.includes(q) || p.promStr.includes(q) || p.noStr.includes(q)
-      );
-      const tbody = document.querySelector('#pc-table tbody');
-      tbody.innerHTML = filtered.map(p => `
-        <tr>
-          <td>${p.name}</td>
-          <td>${p.birthStr}</td>
-          <td>${p.promStr}</td>
-          <td>${p.noStr}</td>
-        </tr>
-      `).join('');
-    }
-
-    function attachPCSort() {
-      const headers = document.querySelectorAll('#pc-table th.sortable');
-      headers.forEach(h => {
-        h.addEventListener('click', () => {
-          const key = h.dataset.key;
-          const isAsc = !h.classList.contains('sorted-asc');
-          headers.forEach(hh => hh.classList.remove('sorted-asc', 'sorted-desc'));
-          h.classList.add(isAsc ? 'sorted-asc' : 'sorted-desc');
-
-          const sorted = [...people].sort((a, b) => {
-            let av, bv;
-            if (key === 'name')  { av = a.name;  bv = b.name; }
-            if (key === 'birth') { av = a.birth ? a.birth.getTime() : 0; bv = b.birth ? b.birth.getTime() : 0; }
-            if (key === 'promo') { av = a.prom ? a.prom.getTime() : 0;  bv = b.prom ? b.prom.getTime() : 0; }
-            if (key === 'no')    { av = a.noNum; bv = b.noNum; }
-            return isAsc ? (av > bv ? 1 : -1) : (av > bv ? -1 : 1);
-          });
-
-          const tbody = document.querySelector('#pc-table tbody');
-          tbody.innerHTML = sorted.map(p => `
-            <tr>
-              <td>${p.name}</td>
-              <td>${p.birthStr}</td>
-              <td>${p.promStr}</td>
-              <td>${p.noStr}</td>
-            </tr>
-          `).join('');
-        });
-      });
-    }
-
-    // スマホ版（現行 mobile2.html の機能）
+    /* ===== モバイル表示（mobile2そのまま） ===== */
     function renderMobileInitial() {
       const tbody = document.querySelector('#mobile-table tbody');
       tbody.innerHTML = people.map((p, i) => `
         <tr>
-          <td class="rank">${i+1}</td>
+          <td class="rank">${i + 1}</td>
           <td>${p.name}</td>
           <td></td>
         </tr>
       `).join('');
     }
-
     function setSortOrder(order) {
       currentSortOrder = order;
     }
-
     function applyMobileSort() {
       const criterion = document.getElementById('sort-select').value;
       const labelMap = {
@@ -245,60 +165,88 @@
       };
       document.getElementById('col-label').textContent = labelMap[criterion] || "";
 
-      const sorted = [...people].sort((a,b) => {
+      const sorted = [...people].sort((a, b) => {
         let av, bv;
         switch (criterion) {
-          case 'kishiNumber': av = a.noNum; bv = b.noNum; break;
-          case 'birthdate': av = a.birth ? a.birth.getTime() : Infinity; bv = b.birth ? b.birth.getTime() : Infinity; break;
-          case 'currentAge': av = a.currentAgeDays; bv = b.currentAgeDays; break;
-          case 'ageAtPromotion': av = a.promoAgeDays; bv = b.promoAgeDays; break;
-          default: av = 0; bv = 0;
+          case 'kishiNumber':     av = a.noNum;             bv = b.noNum;             break;
+          case 'birthdate':       av = a.birth ? a.birth.getTime() : Infinity;
+                                   bv = b.birth ? b.birth.getTime() : Infinity;       break;
+          case 'currentAge':      av = a.currentAgeDays;    bv = b.currentAgeDays;    break;
+          case 'ageAtPromotion':  av = a.promoAgeDays;      bv = b.promoAgeDays;      break;
+          default:                av = 0;                   bv = 0;
         }
         return currentSortOrder === 'asc' ? av - bv : bv - av;
       });
 
       const tbody = document.querySelector('#mobile-table tbody');
-      tbody.innerHTML = sorted.map((p,i) => `
+      tbody.innerHTML = sorted.map((p, i) => `
         <tr>
-          <td class="rank">${i+1}</td>
+          <td class="rank">${i + 1}</td>
           <td>${p.name}</td>
           <td>${
-            criterion === 'kishiNumber' ? (p.noStr ?? '') :
-            criterion === 'birthdate' ? (p.birthStr ?? '') :
-            criterion === 'currentAge' ? (p.currentAgeParts ? formatYMD(p.currentAgeParts) : '') :
+            criterion === 'kishiNumber'    ? (p.noStr ?? '') :
+            criterion === 'birthdate'      ? (p.birthStr ?? '') :
+            criterion === 'currentAge'     ? (p.currentAgeParts ? formatYMD(p.currentAgeParts) : '') :
             criterion === 'ageAtPromotion' ? (p.promoAgeParts ? formatYMD(p.promoAgeParts) : '') : ''
           }</td>
         </tr>
       `).join('');
     }
 
-    function showLayout() {
-  if (window.innerWidth <= 768) {
-    console.log("showLayout: mobile表示");
-    document.getElementById('mobile-container').style.display = 'block';
-    document.getElementById('pc-container').style.display = 'none';
-    renderMobileInitial();
-  } else {
-    console.log("showLayout: PC表示");
-    // ←ここを強制的に block に変更
-    document.getElementById('pc-container').style.display = 'block';
-    document.getElementById('mobile-container').style.display = 'none';
-    renderPC();
-    attachPCSort();
-  }
-}
+    /* ===== PC表示（検索＋ソート矢印） ===== */
+    function renderPC(list = people) {
+      const tbody = document.querySelector('#pc-table tbody');
+      tbody.innerHTML = list.map(p => `
+        <tr>
+          <td>${p.name}</td>
+          <td>${p.birthStr}</td>
+          <td>${p.promStr}</td>
+          <td>${p.noStr ?? ''}</td>
+        </tr>
+      `).join('');
+    }
 
+    function attachPCSort() {
+      const headers = document.querySelectorAll('#pc-table th.sortable');
+      headers.forEach(h => {
+        h.addEventListener('click', () => {
+          const key = h.dataset.key;
+          const isAsc = !h.classList.contains('sorted-asc');
+          headers.forEach(x => x.classList.remove('sorted-asc', 'sorted-desc'));
+          h.classList.add(isAsc ? 'sorted-asc' : 'sorted-desc');
 
-    window.addEventListener('resize', showLayout);
-    window.addEventListener('load', async () => {
+          const sorted = [...people].sort((a, b) => {
+            let av, bv;
+            if (key === 'name')  { av = a.name;  bv = b.name;  return isAsc ? av.localeCompare(bv, 'ja') : bv.localeCompare(av, 'ja'); }
+            if (key === 'birth') { av = a.birth ? a.birth.getTime() : 0; bv = b.birth ? b.birth.getTime() : 0; }
+            if (key === 'promo') { av = a.prom  ? a.prom.getTime()  : 0; bv = b.prom  ? b.prom.getTime()  : 0; }
+            if (key === 'no')    { av = a.noNum; bv = b.noNum; }
+            return isAsc ? (av > bv ? 1 : -1) : (av > bv ? -1 : 1);
+          });
+          renderPC(sorted);
+        });
+      });
+    }
+
+    function applyPCSearch() {
+      const q = (document.getElementById('searchBox')?.value || '').trim();
+      const filtered = q
+        ? people.filter(p =>
+            p.name.includes(q) || p.birthStr.includes(q) || p.promStr.includes(q) || (p.noStr || '').includes(q)
+          )
+        : people;
+      renderPC(filtered);
+    }
+
+    /* ===== 初期化（JSで表示の切替はしない：CSS任せ） ===== */
+    (async () => {
       await loadData();
-
-// ▼ここを追加（people配列の行数を確認）
-  console.log("people.length =", people.length);
-      
-      showLayout();
-      document.getElementById('searchBox').addEventListener('input', applyPCSearch);
-    });
+      renderMobileInitial();      // どちらも描画（CSSで見せ分け）
+      renderPC();
+      attachPCSort();
+      const box = document.getElementById('searchBox');
+      if (box) box.addEventListener('input', applyPCSearch);
+    })();
   </script>
 </body>
 </html>
