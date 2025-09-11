@@ -281,12 +281,14 @@
     renderMobileInitial();
   } else {
     console.log("showLayout: PC表示");
-    document.getElementById('pc-container').style.display = '';
+    // ←ここを強制的に block に変更
+    document.getElementById('pc-container').style.display = 'block';
     document.getElementById('mobile-container').style.display = 'none';
     renderPC();
     attachPCSort();
   }
 }
+
 
     window.addEventListener('resize', showLayout);
     window.addEventListener('load', async () => {
