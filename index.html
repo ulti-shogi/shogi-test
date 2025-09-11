@@ -167,11 +167,12 @@
       <td>${p.name}</td>
       <td>${p.birthStr}</td>
       <td>${p.promStr}</td>
-      <td>${p.noStr || p.noNum || ''}</td> <!-- 修正ポイント -->
+      <td>${p.noStr && p.noStr.trim() !== "" ? p.noStr : (isFinite(p.noNum) ? p.noNum : "")}</td>
     </tr>
   `).join('');
   console.log("renderPC: 出力行数 =", people.length);
 }
+
 
 
     function applyPCSearch() {
