@@ -273,17 +273,19 @@
     }
 
     function showLayout() {
-      if (window.innerWidth <= 768) {
-        document.getElementById('mobile-container').style.display = '';
-        document.getElementById('pc-container').style.display = 'none';
-        renderMobileInitial();
-      } else {
-        document.getElementById('pc-container').style.display = '';
-        document.getElementById('mobile-container').style.display = 'none';
-        renderPC();
-        attachPCSort();
-      }
-    }
+  if (window.innerWidth <= 768) {
+    console.log("showLayout: mobile表示");
+    document.getElementById('mobile-container').style.display = '';
+    document.getElementById('pc-container').style.display = 'none';
+    renderMobileInitial();
+  } else {
+    console.log("showLayout: PC表示");
+    document.getElementById('pc-container').style.display = '';
+    document.getElementById('mobile-container').style.display = 'none';
+    renderPC();
+    attachPCSort();
+  }
+}
 
     window.addEventListener('resize', showLayout);
     window.addEventListener('load', async () => {
