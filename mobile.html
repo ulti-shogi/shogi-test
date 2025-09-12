@@ -6,11 +6,20 @@
   <title>棋士データ検索（スマホ版）</title>
   <link rel="stylesheet" href="style.css">
   <script>
-    // PCならindex.htmlへリダイレクト
-    if (window.matchMedia('(min-width: 769px)').matches) {
+  // ---- スマホ→PC 自動切り替え ＋ 手動切り替え考慮 ----
+  const forced = location.search.includes('force=1');
+
+  const mqToPC = window.matchMedia('(min-width: 769px)');
+
+  function goPCOnMatch(e) {
+    if (!forced && e.matches) {
       location.replace('index.html');
     }
-  </script>
+  }
+
+  goPCOnMatch(mqToPC);
+  mqToPC.addEventListener('change', goPCOnMatch);
+</script>
 </head>
 <body>
   <h1>棋士データ検索（スマホ版）</h1>
@@ -44,7 +53,9 @@
     <tbody></tbody>
   </table>
 
-  <p style="margin-top:1em;"><a href="index.html">▶ PC版を表示</a></p>
+  <p style="margin-top:1em;">
+  <a href="index.html?force=1">▶ PC版を表示</a>
+</p>
 
   <script>
     let people=[]; let currentSortOrder='asc';

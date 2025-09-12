@@ -6,11 +6,24 @@
   <title>棋士データ検索（PC版）</title>
   <link rel="stylesheet" href="style.css">
   <script>
-    // スマホなら自動でmobile.htmlへリダイレクト
-    if (window.matchMedia('(max-width: 768px)').matches) {
+  // ---- PC→スマホ 自動切り替え ＋ 手動切り替え考慮 ----
+  // 手動選択（?force=1）が付いている場合は自動切り替えしない
+  const forced = location.search.includes('force=1');
+
+  const mqToMobile = window.matchMedia('(max-width: 768px)');
+
+  function goMobileOnMatch(e) {
+    if (!forced && e.matches) {
       location.replace('mobile.html');
     }
-  </script>
+  }
+
+  // 初回判定
+  goMobileOnMatch(mqToMobile);
+
+  // 画面幅の変化を監視
+  mqToMobile.addEventListener('change', goMobileOnMatch);
+</script>
 </head>
 <body>
   <h1>棋士データ検索（PC版）</h1>
@@ -32,7 +45,9 @@
     <tbody></tbody>
   </table>
 
-  <p style="margin-top:1em;"><a href="mobile.html">▶ スマホ版を表示</a></p>
+  <p style="margin-top:1em;">
+  <a href="mobile.html?force=1">▶ スマホ版を表示</a>
+</p>
 
   <script>
     let people = [];
