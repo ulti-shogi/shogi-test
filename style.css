@@ -71,3 +71,25 @@ tbody tr:nth-child(odd) {
   background-color: #007bff;
   color: white;
 }
+
+/* ▼ ソート矢印を表示するスタイル */
+th.sortable {
+  cursor: pointer;
+  position: relative;
+  padding-right: 1.2em; /* 矢印のスペース確保 */
+}
+
+th.sorted-asc::after,
+th.sorted-desc::after {
+  position: absolute;
+  right: 0.3em;
+  font-size: 0.8em;
+}
+
+th.sorted-asc::after {
+  content: "▲";
+}
+
+th.sorted-desc::after {
+  content: "▼";
+}
