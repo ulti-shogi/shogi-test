@@ -66,3 +66,8 @@ td.rank, th:nth-child(1) {
 tbody tr:nth-child(odd) {
   background-color: #f9f9f9;
 }
+
+#mobile-container button.active {
+  background-color: #007bff;
+  color: white;
+}

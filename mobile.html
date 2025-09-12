@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>棋士データ検索（スマホ版）</title>
+  <link rel="stylesheet" href="style.css">
+  <script>
+    // PCならindex.htmlへリダイレクト
+    if (window.matchMedia('(min-width: 769px)').matches) {
+      location.replace('index.html');
+    }
+  </script>
+</head>
+<body>
+  <h1>棋士データ検索（スマホ版）</h1>
+  <div class="controls">
+    <label for="sort-select">並び替え基準:</label>
+    <select id="sort-select">
+      <option value="">-- 並び替え未選択 --</option>
+      <option value="kishiNumber">棋士番号</option>
+      <option value="birthdate">生年月日</option>
+      <option value="currentAge">現年齢</option>
+      <option value="ageAtPromotion">四段昇段時年齢</option>
+    </select>
+    <div>
+      <label><input type="radio" name="sortOrder" value="asc" checked> 昇順</label>
+      <label><input type="radio" name="sortOrder" value="desc"> 降順</label>
+    </div>
+    <label style="display:block;margin:.4em 0;">
+      <input type="checkbox" id="m-activeOnly" checked> 現役のみ表示
+    </label>
+    <button type="button" onclick="applyMobileSort()">並び替える</button>
+  </div>
+
+  <table id="mobile-table">
+    <thead>
+      <tr>
+        <th class="rank">順位</th>
+        <th>棋士名</th>
+        <th id="col-label"></th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <p style="margin-top:1em;"><a href="index.html">▶ PC版を表示</a></p>
+
+  <script>
+    let people=[]; let currentSortOrder='asc';
+
+    function parseDate(str){const d=new Date(str);return isNaN(d)?null:d;}
+    function toNumber(str){const n=Number(str);return isNaN(n)?Infinity:n;}
+    function diffYMD(a,b){if(!a||!b)return null;let y=b.getFullYear()-a.getFullYear(),m=b.getMonth()-a.getMonth(),d=b.getDate()-a.getDate();
+      if(d<0){const pm=new Date(b.getFullYear(),b.getMonth(),0);d+=pm.getDate();m--;}
+      if(m<0){m+=12;y--;}return{y,m,d};}
+    function formatYMD(p){return p?`${p.y}歳${p.m}ヶ月${p.d}日`:'';}
+
+    async function loadData(){
+      const res=await fetch('kishi.csv');const text=await res.text();
+      const rows=text.trim().split(/\r?\n/).map(r=>r.split(','));
+      const header=rows.shift();
+      const idx=name=>header.findIndex(h=>h===name);
+      const today=new Date();
+      people=rows.map(cols=>{
+        const birth=parseDate(cols[idx('生年月日')]); const prom=parseDate(cols[idx('四段昇段日')]);
+        return{
+          name:cols[idx('棋士名')],birthStr:cols[idx('生年月日')],promStr:cols[idx('四段昇段日')],noStr:cols[idx('棋士番号')],
+          birth,prom,
+          currentAgeParts:birth?diffYMD(birth,today):null,
+          promoAgeParts:(birth&&prom)?diffYMD(birth,prom):null,
+          currentAgeDays:birth?Math.floor((today-birth)/86400000):Infinity,
+          promoAgeDays:(birth&&prom)?Math.floor((prom-birth)/86400000):Infinity,
+          noNum:toNumber(cols[idx('棋士番号')]),
+          status:cols[idx('状態')]||'現役'
+        };
+      });
+    }
+
+    function getFilteredPeople(){
+      return document.getElementById('m-activeOnly').checked
+        ? people.filter(p=>p.status==='現役')
+        : people;
+    }
+
+    function renderMobileInitial(){
+      const base=getFilteredPeople();
+      const tbody=document.querySelector('#mobile-table tbody');
+      tbody.innerHTML=base.map((p,i)=>`
+        <tr><td class="rank">${i+1}</td><td>${p.name}</td><td></td></tr>
+      `).join('');
+    }
+
+    function applyMobileSort(){
+      const orderRadio=document.querySelector('input[name="sortOrder"]:checked');
+      currentSortOrder=orderRadio?orderRadio.value:'asc';
+      const criterion=document.getElementById('sort-select').value;
+      const labelMap={kishiNumber:"棋士番号",birthdate:"生年月日",currentAge:"現年齢",ageAtPromotion:"四段昇段時年齢"};
+      document.getElementById('col-label').textContent=labelMap[criterion]||"";
+      const base=getFilteredPeople();
+      const sorted=[...base].sort((a,b)=>{
+        let av,bv;
+        switch(criterion){
+          case 'kishiNumber':av=a.noNum;bv=b.noNum;break;
+          case 'birthdate':av=a.birth?a.birth.getTime():Infinity;bv=b.birth?b.birth.getTime():Infinity;break;
+          case 'currentAge':av=a.currentAgeDays;bv=b.currentAgeDays;break;
+          case 'ageAtPromotion':av=a.promoAgeDays;bv=b.promoAgeDays;break;
+          default:av=0;bv=0;
+        }
+        return currentSortOrder==='asc'?av-bv:bv-av;
+      });
+      const tbody=document.querySelector('#mobile-table tbody');
+      tbody.innerHTML=sorted.map((p,i)=>`
+        <tr><td class="rank">${i+1}</td><td>${p.name}</td><td>${
+          criterion==='kishiNumber'?(p.noStr||''):
+          criterion==='birthdate'?(p.birthStr||''):
+          criterion==='currentAge'?(p.currentAgeParts?formatYMD(p.currentAgeParts):''):
+          criterion==='ageAtPromotion'?(p.promoAgeParts?formatYMD(p.promoAgeParts):''):''
+        }</td></tr>
+      `).join('');
+    }
+
+    (async()=>{
+      await loadData();
+      renderMobileInitial();
+      document.getElementById('m-activeOnly').addEventListener('change',()=>{
+        const criterion=document.getElementById('sort-select').value;
+        criterion?applyMobileSort():renderMobileInitial();
+      });
+    })();
+  </script>
+</body>
+</html>
