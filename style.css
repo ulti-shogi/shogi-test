@@ -62,3 +62,7 @@ td.rank, th:nth-child(1) {
   text-align: center;
   white-space: nowrap;
 }
+
+tbody tr:nth-child(odd) {
+  background-color: #f9f9f9;
+}
