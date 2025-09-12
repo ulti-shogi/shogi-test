@@ -6,33 +6,28 @@
   <title>棋士データ検索（PC版）</title>
   <link rel="stylesheet" href="style.css">
   <script>
-  // ---- PC→スマホ 自動切り替え ＋ 手動切り替え考慮 ----
-  // 手動選択（?force=1）が付いている場合は自動切り替えしない
-  const forced = location.search.includes('force=1');
-
-  const mqToMobile = window.matchMedia('(max-width: 768px)');
-
-  function goMobileOnMatch(e) {
-    if (!forced && e.matches) {
-      location.replace('mobile.html');
+    // ---- PC→スマホ 自動切り替え＋リサイズ監視 ----
+    const forced = location.search.includes('force=1');
+    const mqToMobile = window.matchMedia('(max-width: 768px)');
+    function goMobileOnMatch(e) {
+      if (!forced && e.matches) {
+        location.replace('mobile.html');
+      }
     }
-  }
-
-  // 初回判定
-  goMobileOnMatch(mqToMobile);
-
-  // 画面幅の変化を監視
-  mqToMobile.addEventListener('change', goMobileOnMatch);
-</script>
+    goMobileOnMatch(mqToMobile);
+    mqToMobile.addEventListener('change', goMobileOnMatch);
+  </script>
 </head>
 <body>
   <h1>棋士データ検索（PC版）</h1>
+
   <div class="controls">
     <input type="text" id="searchBox" placeholder="検索..." />
     <label style="margin-left:.5em;">
       <input type="checkbox" id="pc-activeOnly" checked> 現役のみ表示
     </label>
   </div>
+
   <table id="pc-table">
     <thead>
       <tr>
@@ -46,12 +41,12 @@
   </table>
 
   <p style="margin-top:1em;">
-  <a href="mobile.html?force=1">▶ スマホ版を表示</a>
-</p>
+    <a href="mobile.html?force=1">▶ スマホ版を表示</a>
+  </p>
 
   <script>
     let people = [];
-    let currentPCSortKey = 'name';
+    let currentPCSortKey = 'no'; // 初期ソートを棋士番号に変更
     let currentPCSortOrder = 'asc';
 
     function parseDate(str){ const d=new Date(str); return isNaN(d)?null:d; }
@@ -137,6 +132,8 @@
     (async()=>{
       await loadData();
       attachPCSort();
+      // 初期状態で棋士番号列に矢印を付ける
+      document.querySelector('#pc-table th[data-key="no"]').classList.add('sorted-asc');
       document.getElementById('searchBox').addEventListener('input',applyPCSearch);
       document.getElementById('pc-activeOnly').addEventListener('change',applyPCSearch);
       applyPCSearch();
