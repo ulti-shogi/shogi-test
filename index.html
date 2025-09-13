@@ -139,5 +139,27 @@
       applyPCSearch();
     })();
   </script>
+    <button id="scrollBottomBtn" style="
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  padding: 0.5em 0.8em;
+  background-color: #007BFF;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  z-index: 1000;
+">
+  ↓ 一番下へ
+</button>
+
+<script>
+  // ▼ ボタンクリックで一番下までスクロール
+  document.getElementById('scrollBottomBtn').addEventListener('click', () => {
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  });
+</script>
 </body>
 </html>
