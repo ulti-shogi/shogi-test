@@ -133,29 +133,54 @@
   }
 
   function applyMobileSort(){
-    const orderRadio=document.querySelector('input[name="sortOrder"]:checked');
-    currentSortOrder=orderRadio?orderRadio.value:'asc';
-    const criterion=document.getElementById('sort-select').value;
-    const labelMap={kishiNumber:"棋士番号",birthdate:"生年月日",currentAge:"現年齢",ageAtPromotion:"四段昇段時年齢",dan:"段位"};
-    document.getElementById('col-label').textContent=labelMap[criterion]||"";
+  const orderRadio = document.querySelector('input[name="sortOrder"]:checked');
+  currentSortOrder = orderRadio ? orderRadio.value : 'asc';
+  const criterion = document.getElementById('sort-select').value;
 
-    const base=filteredPeople.length?filteredPeople:getFilteredPeople();
-    const sorted=[...base].sort((a,b)=>{
-      let av,bv;
-      switch(criterion){
-        case 'kishiNumber':av=a.noNum;bv=b.noNum;break;
-        case 'birthdate':av=a.birth?a.birth.getTime():Infinity;bv=b.birth?b.birth.getTime():Infinity;break;
-        case 'currentAge':av=a.currentAgeDays;bv=b.currentAgeDays;break;
-        case 'ageAtPromotion':av=a.promoAgeDays;bv=b.promoAgeDays;break;
-        case 'dan':av=a.dan? a.dan.charCodeAt(0):0;bv=b.dan? b.dan.charCodeAt(0):0;break;
-        default:av=0;bv=0;
-      }
-      return currentSortOrder==='asc'?av-bv:bv-av;
-    });
+  // 列見出しの更新
+  const labelMap = {
+    kishiNumber: "棋士番号",
+    birthdate: "生年月日",
+    currentAge: "現年齢",
+    ageAtPromotion: "四段昇段時年齢",
+    dan: "段位"
+  };
+  document.getElementById('col-label').textContent = labelMap[criterion] || "";
 
-    renderMobileTable(sorted);
-    updateResultCount(sorted);
-  }
+  // 絞り込み済みデータを基準にソート
+  const base = filteredPeople.length ? filteredPeople : getFilteredPeople();
+  const sorted = [...base].sort((a,b)=>{
+    let av, bv;
+    switch (criterion){
+      case 'kishiNumber': av = a.noNum; bv = b.noNum; break;
+      case 'birthdate': av = a.birth ? a.birth.getTime() : Infinity; bv = b.birth ? b.birth.getTime() : Infinity; break;
+      case 'currentAge': av = a.currentAgeDays; bv = b.currentAgeDays; break;
+      case 'ageAtPromotion': av = a.promoAgeDays; bv = b.promoAgeDays; break;
+      case 'dan': av = a.dan ? a.dan.charCodeAt(0) : 0; bv = b.dan ? b.dan.charCodeAt(0) : 0; break;
+      default: av = 0; bv = 0;
+    }
+    return currentSortOrder === 'asc' ? av - bv : bv - av;
+  });
+
+  // ソート結果をテーブルに反映（3列目の内容は基準に応じて切り替え）
+  const tbody = document.querySelector('#mobile-table tbody');
+  tbody.innerHTML = sorted.map((p,i)=>`
+    <tr>
+      <td class="rank">${i+1}</td>
+      <td>${p.name}</td>
+      <td>${
+        criterion === 'kishiNumber' ? (p.noStr || '') :
+        criterion === 'birthdate' ? (p.birthStr || '') :
+        criterion === 'currentAge' ? (p.currentAgeParts ? formatYMD(p.currentAgeParts) : '') :
+        criterion === 'ageAtPromotion' ? (p.promoAgeParts ? formatYMD(p.promoAgeParts) : '') :
+        criterion === 'dan' ? (p.dan || '') : ''
+      }</td>
+    </tr>
+  `).join('');
+
+  // 件数表示も更新
+  updateResultCount(sorted);
+}
 
   // 件数表示更新
   function updateResultCount(data){
