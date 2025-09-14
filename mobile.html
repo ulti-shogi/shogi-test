@@ -6,17 +6,20 @@
   <title>棋士データ検索（スマホ版）</title>
   <link rel="stylesheet" href="style.css">
   <script>
-    // PCならindex.htmlへリダイレクト（手動切替は無効化）
-    const forced = location.search.includes('force=1');
-    const mqToPC = window.matchMedia('(min-width: 769px)');
-    function goPCOnMatch(e) {
-      if (!forced && e.matches) {
-        location.replace('index.html');
-      }
+  // ---- スマホ→PC 自動切り替え ＋ 手動切り替え考慮 ----
+  const forced = location.search.includes('force=1');
+
+  const mqToPC = window.matchMedia('(min-width: 769px)');
+
+  function goPCOnMatch(e) {
+    if (!forced && e.matches) {
+      location.replace('index.html');
     }
-    goPCOnMatch(mqToPC);
-    mqToPC.addEventListener('change', goPCOnMatch);
-  </script>
+  }
+
+  goPCOnMatch(mqToPC);
+  mqToPC.addEventListener('change', goPCOnMatch);
+</script>
 </head>
 <body>
   <h1>棋士データ検索（スマホ版）</h1>
@@ -50,14 +53,23 @@
     <tbody></tbody>
   </table>
 
+  <p style="margin-top:1em;">
   <p style="margin-top:1em; display: flex; justify-content: space-between; align-items: center;">
-    <a href="index.html?force=1">▶ PC版を表示</a>
-    <a href="#" id="scrollTopLink">▲ トップへ戻る</a>
-  </p>
+  <a href="index.html?force=1">▶ PC版を表示</a>
+  <a href="#" id="scrollTopLink">▲ トップへ戻る</a>
+</p>
+
+<script>
+  // ▼ トップへ戻るリンクの動作
+  document.getElementById('scrollTopLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+</script>
+</p>
 
   <script>
-    let people=[]; 
-    let currentSortOrder='asc';
+    let people=[]; let currentSortOrder='asc';
 
     function parseDate(str){const d=new Date(str);return isNaN(d)?null:d;}
     function toNumber(str){const n=Number(str);return isNaN(n)?Infinity:n;}
@@ -82,6 +94,7 @@
           currentAgeDays:birth?Math.floor((today-birth)/86400000):Infinity,
           promoAgeDays:(birth&&prom)?Math.floor((prom-birth)/86400000):Infinity,
           noNum:toNumber(cols[idx('棋士番号')]),
+           dan: cols[idx('段位')],   // ← 追加 
           status:cols[idx('状態')]||'現役'
         };
       });
@@ -94,12 +107,16 @@
     }
 
     function renderMobileInitial(){
-      const base=getFilteredPeople();
-      const tbody=document.querySelector('#mobile-table tbody');
-      tbody.innerHTML=base.map((p,i)=>`
-        <tr><td class="rank">${i+1}</td><td>${p.name}</td><td></td></tr>
-      `).join('');
-    }
+  const base=getFilteredPeople();
+  const tbody=document.querySelector('#mobile-table tbody');
+  tbody.innerHTML=base.map((p,i)=>`
+    <tr>
+      <td class="rank">${i+1}</td>
+      <td>${p.name}</td>
+      <td>${p.dan || ''}</td>  <!-- 段位を表示 -->
+    </tr>
+  `).join('');
+}
 
     function applyMobileSort(){
       const orderRadio=document.querySelector('input[name="sortOrder"]:checked');
@@ -136,11 +153,6 @@
       document.getElementById('m-activeOnly').addEventListener('change',()=>{
         const criterion=document.getElementById('sort-select').value;
         criterion?applyMobileSort():renderMobileInitial();
-      });
-      // トップへ戻る
-      document.getElementById('scrollTopLink').addEventListener('click',(e)=>{
-        e.preventDefault();
-        window.scrollTo({top:0,behavior:'smooth'});
       });
     })();
   </script>
