@@ -80,6 +80,7 @@
 
   <script>
     let people=[]; let currentSortOrder='asc';
+    let filteredPeople = []; // 絞り込み後の配列を保持
 
     function parseDate(str){const d=new Date(str);return isNaN(d)?null:d;}
     function toNumber(str){const n=Number(str);return isNaN(n)?Infinity:n;}
