@@ -42,6 +42,16 @@
     <button type="button" onclick="applyMobileSort()">並び替える</button>
   </div>
 
+<p id="result-count" style="margin:0.5em 0;">該当棋士：全員表示中</p>
+
+<div class="range-filters" style="margin-bottom:0.5em;">
+  年齢範囲:
+  <input type="number" id="age-min" placeholder="最小">
+  ～
+  <input type="number" id="age-max" placeholder="最大">
+  <button id="apply-range">範囲で絞り込み</button>
+</div>
+  
   <table id="mobile-table">
     <thead>
       <tr>
