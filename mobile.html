@@ -179,14 +179,18 @@ function applyAgeRangeFilter() {
   const min = parseInt(document.getElementById('age-min').value, 10);
   const max = parseInt(document.getElementById('age-max').value, 10);
 
-  let filtered = getFilteredPeople();
+  filteredPeople = people;
 
   if (!isNaN(min)) {
-    filtered = filtered.filter(p => p.currentAgeParts?.y >= min);
+    filteredPeople = filteredPeople.filter(p => p.currentAgeParts?.y >= min);
   }
   if (!isNaN(max)) {
-    filtered = filtered.filter(p => p.currentAgeParts?.y <= max);
+    filteredPeople = filteredPeople.filter(p => p.currentAgeParts?.y <= max);
   }
+
+  renderMobileTable(filteredPeople);
+  updateResultCount(filteredPeople);
+}
 
   // テーブルを再描画
   const tbody=document.querySelector('#mobile-table tbody');
