@@ -105,7 +105,9 @@ function renderMobileTable(data, criterion=""){
 }
 
 function renderMobileInitial(){
-  renderMobileTable(getFilteredPeople());
+  // ヘッダーも段位に戻す
+  document.getElementById('col-label').textContent = '段位';
+  renderMobileTable(getFilteredPeople(), '');
 }
 
 function applyMobileSort(){
@@ -131,7 +133,16 @@ function applyMobileSort(){
 (async()=>{
   await loadData();
   renderMobileInitial();
-  document.getElementById('m-activeOnly').addEventListener('change', renderMobileInitial);
+
+  // 並び替え状態を維持したまま現役フィルタ切り替え
+  document.getElementById('m-activeOnly').addEventListener('change', ()=>{
+    const criterion=document.getElementById('sort-select').value;
+    if (criterion) {
+      applyMobileSort();
+    } else {
+      renderMobileInitial();
+    }
+  });
 })();
 </script>
 </body>
