@@ -165,6 +165,46 @@
         criterion?applyMobileSort():renderMobileInitial();
       });
     })();
+
+    // 件数表示を更新する関数
+function updateResultCount(data) {
+  document.getElementById('result-count').textContent =
+    `該当棋士：${data.length}名`;
+}
+
+// 年齢範囲で絞り込み
+function applyAgeRangeFilter() {
+  const min = parseInt(document.getElementById('age-min').value, 10);
+  const max = parseInt(document.getElementById('age-max').value, 10);
+
+  let filtered = getFilteredPeople();
+
+  if (!isNaN(min)) {
+    filtered = filtered.filter(p => p.currentAgeParts?.y >= min);
+  }
+  if (!isNaN(max)) {
+    filtered = filtered.filter(p => p.currentAgeParts?.y <= max);
+  }
+
+  // テーブルを再描画
+  const tbody=document.querySelector('#mobile-table tbody');
+  tbody.innerHTML=filtered.map((p,i)=>`
+    <tr>
+      <td class="rank">${i+1}</td>
+      <td>${p.name}</td>
+      <td>${p.dan || ''}</td>
+    </tr>
+  `).join('');
+
+  updateResultCount(filtered);
+}
+
+// 初期化
+document.addEventListener('DOMContentLoaded', () => {
+  updateResultCount(getFilteredPeople());
+  document.getElementById('apply-range')
+    .addEventListener('click', applyAgeRangeFilter);
+});
   </script>
 </body>
 </html>
