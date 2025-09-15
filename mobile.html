@@ -141,72 +141,37 @@ function renderMobileInitial(){
   renderMobileTable(getFilteredPeople(), '');
 }
 
-function applyMobileSort(){
-  const orderRadio = document.querySelector('input[name="sortOrder"]:checked');
-  currentSortOrder = orderRadio ? orderRadio.value : 'asc';
-  const criterion = document.getElementById('sort-select').value;
+function applyMobileSort(){ const orderRadio=document.querySelector('input[name="sortOrder"]:checked'); currentSortOrder=orderRadio?orderRadio.value:'asc'; const criterion=document.getElementById('sort-select').value; const labelMap={kishiNumber:"棋士番号",birthdate:"生年月日",currentAge:"現年齢",ageAtPromotion:"四段昇段時年齢",dan:"段位"}; document.getElementById('col-label').textContent=labelMap[criterion]||"段位";
 
-  const labelMap = {
-    kishiNumber: "棋士番号",
-    birthdate: "生年月日",
-    currentAge: "現年齢",
-    ageAtPromotion: "四段昇段時年齢",
-    dan: "段位"
-  };
-  document.getElementById('col-label').textContent = labelMap[criterion] || "段位";
+// 並び替えを段位を基準に初期表示に変更 const baseData=[...getFilteredPeople()].sort((a,b)=>{ const aRank=rankOrderMap[a.dan]??0; const bRank=rankOrderMap[b.dan]??0; if(aRank!==bRank) return bRank-aRank; // 段位の高い順 // 同段位なら昇段日古い順 const ad=getDanPromotionDate(a); const bd=getDanPromotionDate(b); const av=ad?ad.getTime():Infinity; const bv=bd?bd.getTime():Infinity; return av-bv; });
 
-  const sorted = [...getFilteredPeople()].sort((a,b)=>{
-    switch(criterion){
-      case 'kishiNumber':
-        return currentSortOrder==='asc' ? a.noNum-b.noNum : b.noNum-a.noNum;
+const sorted=baseData.sort((a,b)=>{ switch(criterion){ case 'kishiNumber': return currentSortOrder==='asc'?a.noNum-b.noNum:b.noNum-a.noNum; case 'birthdate': return currentSortOrder==='asc'? (a.birth?.getTime()??Infinity)-(b.birth?.getTime()??Infinity): (b.birth?.getTime()??Infinity)-(a.birth?.getTime()??Infinity); case 'currentAge': return currentSortOrder==='asc'?a.currentAgeDays-b.currentAgeDays:b.currentAgeDays-a.currentAgeDays; case 'ageAtPromotion': return currentSortOrder==='asc'?a.promoAgeDays-b.promoAgeDays:b.promoAgeDays-a.promoAgeDays; case 'dan': { const aState=stateOrderAsc[a.status]??99; const bState=stateOrderAsc[b.status]??99; if(aState!==bState) return currentSortOrder==='asc'?aState-bState:bState-aState;
 
-      case 'birthdate': {
-        const av = a.birth ? a.birth.getTime() : Infinity;
-        const bv = b.birth ? b.birth.getTime() : Infinity;
-        return currentSortOrder==='asc' ? av-bv : bv-av;
-      }
+if(a.status==='現役'){
+      const aTitle=a.titleRank?Number(a.titleRank):Infinity;
+      const bTitle=b.titleRank?Number(b.titleRank):Infinity;
+      if(aTitle!==bTitle) return currentSortOrder==='asc'?aTitle-bTitle:bTitle-aTitle;
 
-      case 'currentAge':
-        return currentSortOrder==='asc' ? a.currentAgeDays-b.currentAgeDays : b.currentAgeDays-a.currentAgeDays;
+      const aRank=rankOrderMap[a.dan]??0;
+      const bRank=rankOrderMap[b.dan]??0;
+      if(aRank!==bRank) return currentSortOrder==='asc'?bRank-aRank:aRank-bRank;
 
-      case 'ageAtPromotion':
-        return currentSortOrder==='asc' ? a.promoAgeDays-b.promoAgeDays : b.promoAgeDays-a.promoAgeDays;
-
-      case 'dan': {
-        // ① 状態の優先度（現役→引退→物故→退会）
-        const as = stateOrderAsc[a.status] ?? 99;
-        const bs = stateOrderAsc[b.status] ?? 99;
-        if (as !== bs) return currentSortOrder==='asc' ? as-bs : bs-as;
-
-        // ② 現役：タイトル保持者 → 段位（九→四） → 同段位は「その段位の昇段日が古い順」
-        if (a.status === '現役') {
-          const at = a.titleRank ? Number(a.titleRank) : Infinity;
-          const bt = b.titleRank ? Number(b.titleRank) : Infinity;
-          if (at !== bt) return currentSortOrder==='asc' ? at-bt : bt-at;
-
-          const ar = rankOrderMap[a.dan] ?? 0;
-          const br = rankOrderMap[b.dan] ?? 0;
-          if (ar !== br) return currentSortOrder==='asc' ? br-ar : ar-br;
-
-          // ★ 同段位どうしの比較は「その段位の昇段日」で行う
-          const ad = getDanPromotionDate(a);
-          const bd = getDanPromotionDate(b);
-          const av = ad ? ad.getTime() : Infinity;
-          const bv = bd ? bd.getTime() : Infinity;
-          if (av !== bv) return currentSortOrder==='asc' ? av-bv : bv-av;
-
-          // さらに同じなら最後のタイブレーク：棋士番号
-          return currentSortOrder==='asc' ? a.noNum-b.noNum : b.noNum-a.noNum;
-        }
-
-        // ③ 引退・物故・退会：棋士番号順
-        return currentSortOrder==='asc' ? a.noNum-b.noNum : b.noNum-a.noNum;
-      }
-
-      default:
-        return 0;
+      const ad=getDanPromotionDate(a);
+      const bd=getDanPromotionDate(b);
+      const av=ad?ad.getTime():Infinity;
+      const bv=bd?bd.getTime():Infinity;
+      return currentSortOrder==='asc'?av-bv:bv-av;
     }
-  });
+    return currentSortOrder==='asc'?a.noNum-b.noNum:b.noNum-a.noNum;
+  }
+  default: return 0;
+}
+
+});
+
+// テーブル表示に棋士番号列を追加 const tbody=document.querySelector('#mobile-table tbody'); tbody.innerHTML=sorted.map((p,i)=><tr> <td class="rank">${i+1}</td> <td>${p.name}</td> <td>${p.dan||''}</td> <td>${p.noStr||''}</td> </tr>).join(''); }
+
+
 
   renderMobileTable(sorted, criterion);
 }
