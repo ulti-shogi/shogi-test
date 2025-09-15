@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="ja">
+<!DOCTYPE html>
+<html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -6,7 +7,9 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>棋士データ検索（スマホ版）</h1>  <div class="controls">
+  <h1>棋士データ検索（スマホ版）</h1>
+
+  <div class="controls">
     <label for="sort-select">並び替え基準:</label>
     <select id="sort-select">
       <option value="">-- 並び替え未選択 --</option>
@@ -24,35 +27,48 @@
       <input type="checkbox" id="m-activeOnly" checked> 現役のみ表示
     </label>
     <button type="button" onclick="applyMobileSort()">並び替える</button>
-  </div>  <table id="mobile-table">
+  </div>
+
+  <table id="mobile-table">
     <thead>
-      <tr>
-        <th class="rank">順位</th>
-        <th>棋士名</th>
-        <th id="col-label">段位</th>
-        <th>棋士番号</th>
+      <tr id="thead-row">
+        <!-- 初期表示ではJSで4列ヘッダーをセットします -->
       </tr>
     </thead>
     <tbody></tbody>
-  </table><script>
+  </table>
+
+<script>
 let people = [];
 let currentSortOrder = 'asc';
+
 const stateOrderAsc = { "現役": 0, "引退": 1, "物故": 2, "退会": 3 };
-const rankOrderMap = { "九段": 9, "八段": 8, "七段": 7, "六段": 6, "五段": 5, "四段": 4 };
+const rankOrderMap   = { "九段": 9, "八段": 8, "七段": 7, "六段": 6, "五段": 5, "四段": 4 };
 
 function parseDate(str){ const d=new Date(str); return isNaN(d)?null:d; }
 function toNumber(str){ const n=Number(str); return isNaN(n)?Infinity:n; }
 function diffYMD(a,b){ if(!a||!b)return null; let y=b.getFullYear()-a.getFullYear(),m=b.getMonth()-a.getMonth(),d=b.getDate()-a.getDate(); if(d<0){const pm=new Date(b.getFullYear(),b.getMonth(),0);d+=pm.getDate();m--;} if(m<0){m+=12;y--;} return {y,m,d}; }
 function formatYMD(p){ return p?`${p.y}歳${p.m}ヶ月${p.d}日`:''; }
 
-function getDanPromotionDate(p){ switch(p.dan){ case '九段': return p.d9 || null; case '八段': return p.d8 || null; case '七段': return p.d7 || null; case '六段': return p.d6 || null; case '五段': return p.d5 || null; case '四段': return p.prom || null; default: return null; } }
+// 現在の段位に対応する昇段日を返す
+function getDanPromotionDate(p){
+  switch(p.dan){
+    case '九段': return p.d9 || null;
+    case '八段': return p.d8 || null;
+    case '七段': return p.d7 || null;
+    case '六段': return p.d6 || null;
+    case '五段': return p.d5 || null;
+    case '四段': return p.prom || null; // 四段＝四段昇段日
+    default: return null;
+  }
+}
 
 async function loadData(){
-  const res = await fetch('kishi.csv');
+  const res  = await fetch('kishi.csv');
   const text = await res.text();
   const rows = text.trim().split(/\r?\n/).map(r=>r.split(','));
   const header = rows.shift();
-  const idx = name => header.findIndex(h => h === name);
+  const idx = name => header.findIndex(h=>h===name);
   const today = new Date();
 
   people = rows.map(cols=>{
@@ -63,6 +79,7 @@ async function loadData(){
     const d7 = parseDate(cols[idx('七段昇段日')]);
     const d8 = parseDate(cols[idx('八段昇段日')]);
     const d9 = parseDate(cols[idx('九段昇段日')]);
+
     return {
       name: cols[idx('棋士名')],
       birthStr: cols[idx('生年月日')],
@@ -71,7 +88,7 @@ async function loadData(){
       noNum:    toNumber(cols[idx('棋士番号')]),
       dan:      cols[idx('段位')],
       titleRank: cols[idx('タイトル保持者')] || '',
-      status:   cols[idx('状態')] || '現役',
+      status:    cols[idx('状態')] || '現役',
       birth, prom, d5, d6, d7, d8, d9,
       currentAgeParts: birth ? diffYMD(birth,today) : null,
       promoAgeParts: (birth&&prom) ? diffYMD(birth,prom) : null,
@@ -81,87 +98,144 @@ async function loadData(){
   });
 }
 
-function getFilteredPeople(){
-  return document.getElementById('m-activeOnly').checked ? people.filter(p=>p.status==='現役') : people;
-}
-
+// 段位順の総合ソート（状態→タイトル保持者→段位→昇段日→棋士番号）
 function sortByDan(list, order='asc'){
   const asc = (order==='asc');
   return [...list].sort((a,b)=>{
     const as = stateOrderAsc[a.status] ?? 99;
     const bs = stateOrderAsc[b.status] ?? 99;
     if (as !== bs) return asc ? as - bs : bs - as;
+
     if (a.status === '現役') {
       const at = a.titleRank ? Number(a.titleRank) : Infinity;
       const bt = b.titleRank ? Number(b.titleRank) : Infinity;
       if (at !== bt) return asc ? at - bt : bt - at;
+
       const ar = rankOrderMap[a.dan] ?? 0;
       const br = rankOrderMap[b.dan] ?? 0;
       if (ar !== br) return asc ? br - ar : ar - br;
+
       const ad = getDanPromotionDate(a);
       const bd = getDanPromotionDate(b);
       const av = ad ? ad.getTime() : Infinity;
       const bv = bd ? bd.getTime() : Infinity;
       if (av !== bv) return asc ? av - bv : bv - av;
+
       return asc ? a.noNum - b.noNum : b.noNum - a.noNum;
     }
+    // 引退・物故・退会は棋士番号順
     return asc ? a.noNum - b.noNum : b.noNum - a.noNum;
   });
 }
 
-function renderMobileTable(data, criterion=""){
+/** ★ 初期表示：4列（順位・棋士名・段位・棋士番号） */
+function renderInitialTable(data){
+  const thead = document.getElementById('thead-row');
+  thead.innerHTML = `
+    <th class="rank">順位</th>
+    <th>棋士名</th>
+    <th id="col-label">段位</th>
+    <th>棋士番号</th>
+  `;
+  const tbody = document.querySelector('#mobile-table tbody');
+  tbody.innerHTML = data.map((p,i)=>`
+    <tr>
+      <td class="rank">${i+1}</td>
+      <td>${p.name}</td>
+      <td>${p.dan || ''}</td>
+      <td>${p.noStr || ''}</td>
+    </tr>
+  `).join('');
+}
+
+/** ★ 並び替え後：3列（順位・棋士名・選んだ基準） */
+function renderSortedTable(data, criterion){
+  const labelMap = {
+    kishiNumber:"棋士番号", birthdate:"生年月日",
+    currentAge:"現年齢", ageAtPromotion:"四段昇段時年齢", dan:"段位"
+  };
+  const thead = document.getElementById('thead-row');
+  thead.innerHTML = `
+    <th class="rank">順位</th>
+    <th>棋士名</th>
+    <th id="col-label">${labelMap[criterion] || '段位'}</th>
+  `;
   const tbody = document.querySelector('#mobile-table tbody');
   tbody.innerHTML = data.map((p,i)=>{
-    let third =
+    const third =
       criterion==='kishiNumber'    ? (p.noStr || '') :
       criterion==='birthdate'      ? (p.birthStr || '') :
       criterion==='currentAge'     ? (p.currentAgeParts ? formatYMD(p.currentAgeParts) : '') :
       criterion==='ageAtPromotion' ? (p.promoAgeParts ? formatYMD(p.promoAgeParts) : '') :
-      (p.dan || '');
+                                     (p.dan || '');
     return `
       <tr>
         <td class="rank">${i+1}</td>
         <td>${p.name}</td>
         <td>${third}</td>
-        <td>${p.noStr || ''}</td>
       </tr>
     `;
   }).join('');
 }
 
 function renderMobileInitial(){
-  document.getElementById('col-label').textContent = '段位';
+  // 初期：段位順（昇順ロジック）で4列表示
   const base = sortByDan(getFilteredPeople(), 'asc');
-  renderMobileTable(base, 'dan');
+  renderInitialTable(base);
+}
+
+function getFilteredPeople(){
+  return document.getElementById('m-activeOnly').checked
+    ? people.filter(p=>p.status==='現役')
+    : people;
 }
 
 function applyMobileSort(){
   const orderRadio = document.querySelector('input[name="sortOrder"]:checked');
   currentSortOrder = orderRadio ? orderRadio.value : 'asc';
   const criterion = document.getElementById('sort-select').value;
-  const labelMap = { kishiNumber:"棋士番号", birthdate:"生年月日", currentAge:"現年齢", ageAtPromotion:"四段昇段時年齢", dan:"段位" };
-  document.getElementById('col-label').textContent = labelMap[criterion] || "段位";
 
-  let sorted;
   const base = getFilteredPeople();
+  let sorted;
   switch(criterion){
-    case 'kishiNumber': sorted=[...base].sort((a,b)=> currentSortOrder==='asc'?a.noNum-b.noNum:b.noNum-a.noNum); break;
-    case 'birthdate': sorted=[...base].sort((a,b)=>{const av=a.birth?a.birth.getTime():Infinity; const bv=b.birth?b.birth.getTime():Infinity; return currentSortOrder==='asc'?av-bv:bv-av;}); break;
-    case 'currentAge': sorted=[...base].sort((a,b)=> currentSortOrder==='asc'?a.currentAgeDays-b.currentAgeDays:b.currentAgeDays-a.currentAgeDays); break;
-    case 'ageAtPromotion': sorted=[...base].sort((a,b)=> currentSortOrder==='asc'?a.promoAgeDays-b.promoAgeDays:b.promoAgeDays-a.promoAgeDays); break;
-    case 'dan': sorted=sortByDan(base, currentSortOrder); break;
-    default: sorted=sortByDan(base,'asc');
+    case 'kishiNumber':
+      sorted = [...base].sort((a,b)=> currentSortOrder==='asc' ? a.noNum-b.noNum : b.noNum-a.noNum);
+      break;
+    case 'birthdate':
+      sorted = [...base].sort((a,b)=>{
+        const av=a.birth ? a.birth.getTime() : Infinity;
+        const bv=b.birth ? b.birth.getTime() : Infinity;
+        return currentSortOrder==='asc' ? av-bv : bv-av;
+      });
+      break;
+    case 'currentAge':
+      sorted = [...base].sort((a,b)=> currentSortOrder==='asc' ? a.currentAgeDays-b.currentAgeDays : b.currentAgeDays-a.currentAgeDays);
+      break;
+    case 'ageAtPromotion':
+      sorted = [...base].sort((a,b)=> currentSortOrder==='asc' ? a.promoAgeDays-b.promoAgeDays : b.promoAgeDays-a.promoAgeDays);
+      break;
+    case 'dan':
+      sorted = sortByDan(base, currentSortOrder);
+      break;
+    default:
+      // 未選択なら初期表示（4列）に戻す
+      renderMobileInitial();
+      return;
   }
-  renderMobileTable(sorted, criterion || 'dan');
+  // 並び替え時は3列表示
+  renderSortedTable(sorted, criterion);
 }
 
 (async()=>{
   await loadData();
   renderMobileInitial();
+
+  // 「現役のみ表示」切替：基準未選択なら4列初期表示、選択中なら3列並び替えを維持
   document.getElementById('m-activeOnly').addEventListener('change', ()=>{
     const criterion = document.getElementById('sort-select').value;
     if (criterion) applyMobileSort(); else renderMobileInitial();
   });
 })();
-</script></body>
+</script>
+</body>
 </html>
