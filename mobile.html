@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="ja">
+<!DOCTYPE html><html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -7,9 +6,7 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>棋士データ検索（スマホ版）</h1>
-
-  <div class="controls">
+  <h1>棋士データ検索（スマホ版）</h1>  <div class="controls">
     <label for="sort-select">並び替え基準:</label>
     <select id="sort-select">
       <option value="">-- 並び替え未選択 --</option>
@@ -17,6 +14,7 @@
       <option value="birthdate">生年月日</option>
       <option value="currentAge">現年齢</option>
       <option value="ageAtPromotion">四段昇段時年齢</option>
+      <option value="dan">段位</option>
     </select>
     <div>
       <label><input type="radio" name="sortOrder" value="asc" checked> 昇順</label>
@@ -26,9 +24,7 @@
       <input type="checkbox" id="m-activeOnly" checked> 現役のみ表示
     </label>
     <button type="button" onclick="applyMobileSort()">並び替える</button>
-  </div>
-
-  <table id="mobile-table">
+  </div>  <table id="mobile-table">
     <thead>
       <tr>
         <th class="rank">順位</th>
@@ -37,11 +33,12 @@
       </tr>
     </thead>
     <tbody></tbody>
-  </table>
-
-<script>
+  </table><script>
 let people = [];
 let currentSortOrder = 'asc';
+
+const stateOrderAsc = { "現役": 0, "引退": 1, "物故": 2, "退会": 3 };
+const rankOrderMap = { "九段": 9, "八段": 8, "七段": 7, "六段": 6, "五段": 5, "四段": 4 };
 
 function parseDate(str){const d=new Date(str);return isNaN(d)?null:d;}
 function toNumber(str){const n=Number(str);return isNaN(n)?Infinity:n;}
@@ -69,14 +66,16 @@ async function loadData(){
       birthStr:cols[idx('生年月日')],
       promStr:cols[idx('四段昇段日')],
       noStr:cols[idx('棋士番号')],
+      noNum:toNumber(cols[idx('棋士番号')]),
       dan:cols[idx('段位')],
+      danDate:parseDate(cols[idx('段位昇段日')]),
+      titleRank:cols[idx('タイトル保持者')],
+      status:cols[idx('状態')]||'現役',
       birth,prom,
       currentAgeParts:birth?diffYMD(birth,today):null,
       promoAgeParts:(birth&&prom)?diffYMD(birth,prom):null,
       currentAgeDays:birth?Math.floor((today-birth)/86400000):Infinity,
-      promoAgeDays:(birth&&prom)?Math.floor((prom-birth)/86400000):Infinity,
-      noNum:toNumber(cols[idx('棋士番号')]),
-      status:cols[idx('状態')]||'現役'
+      promoAgeDays:(birth&&prom)?Math.floor((prom-birth)/86400000):Infinity
     };
   });
 }
@@ -105,7 +104,6 @@ function renderMobileTable(data, criterion=""){
 }
 
 function renderMobileInitial(){
-  // ヘッダーも段位に戻す
   document.getElementById('col-label').textContent = '段位';
   renderMobileTable(getFilteredPeople(), '');
 }
@@ -114,27 +112,50 @@ function applyMobileSort(){
   const orderRadio=document.querySelector('input[name="sortOrder"]:checked');
   currentSortOrder=orderRadio?orderRadio.value:'asc';
   const criterion=document.getElementById('sort-select').value;
-  const labelMap={kishiNumber:"棋士番号",birthdate:"生年月日",currentAge:"現年齢",ageAtPromotion:"四段昇段時年齢"};
+  const labelMap={kishiNumber:"棋士番号",birthdate:"生年月日",currentAge:"現年齢",ageAtPromotion:"四段昇段時年齢",dan:"段位"};
   document.getElementById('col-label').textContent=labelMap[criterion]||"段位";
+
   const sorted=[...getFilteredPeople()].sort((a,b)=>{
-    let av,bv;
     switch(criterion){
-      case 'kishiNumber':av=a.noNum;bv=b.noNum;break;
-      case 'birthdate':av=a.birth?a.birth.getTime():Infinity;bv=b.birth?b.birth.getTime():Infinity;break;
-      case 'currentAge':av=a.currentAgeDays;bv=b.currentAgeDays;break;
-      case 'ageAtPromotion':av=a.promoAgeDays;bv=b.promoAgeDays;break;
-      default:av=0;bv=0;
+      case 'kishiNumber': return currentSortOrder==='asc'?a.noNum-b.noNum:b.noNum-a.noNum;
+      case 'birthdate': return currentSortOrder==='asc'?
+        (a.birth?.getTime()??Infinity)-(b.birth?.getTime()??Infinity):
+        (b.birth?.getTime()??Infinity)-(a.birth?.getTime()??Infinity);
+      case 'currentAge': return currentSortOrder==='asc'?a.currentAgeDays-b.currentAgeDays:b.currentAgeDays-a.currentAgeDays;
+      case 'ageAtPromotion': return currentSortOrder==='asc'?a.promoAgeDays-b.promoAgeDays:b.promoAgeDays-a.promoAgeDays;
+      case 'dan': {
+        // ① 状態優先
+        const aState=stateOrderAsc[a.status]??99;
+        const bState=stateOrderAsc[b.status]??99;
+        if(aState!==bState) return currentSortOrder==='asc'?aState-bState:bState-aState;
+
+        if(a.status==='現役'){
+          // ② タイトル保持者 → 段位 → 昇段日
+          const aTitle=a.titleRank?Number(a.titleRank):Infinity;
+          const bTitle=b.titleRank?Number(b.titleRank):Infinity;
+          if(aTitle!==bTitle) return currentSortOrder==='asc'?aTitle-bTitle:bTitle-aTitle;
+
+          const aRank=rankOrderMap[a.dan]??0;
+          const bRank=rankOrderMap[b.dan]??0;
+          if(aRank!==bRank) return currentSortOrder==='asc'?bRank-aRank:aRank-bRank;
+
+          const aDate=a.danDate?a.danDate.getTime():Infinity;
+          const bDate=b.danDate?b.danDate.getTime():Infinity;
+          return currentSortOrder==='asc'?aDate-bDate:bDate-aDate;
+        }
+        // ③ 引退・物故・退会 → 棋士番号順
+        return currentSortOrder==='asc'?a.noNum-b.noNum:b.noNum-a.noNum;
+      }
+      default: return 0;
     }
-    return currentSortOrder==='asc'?av-bv:bv-av;
   });
+
   renderMobileTable(sorted, criterion);
 }
 
 (async()=>{
   await loadData();
   renderMobileInitial();
-
-  // 並び替え状態を維持したまま現役フィルタ切り替え
   document.getElementById('m-activeOnly').addEventListener('change', ()=>{
     const criterion=document.getElementById('sort-select').value;
     if (criterion) {
@@ -144,6 +165,5 @@ function applyMobileSort(){
     }
   });
 })();
-</script>
-</body>
+</script></body>
 </html>
