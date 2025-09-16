@@ -57,6 +57,7 @@ async function loadData(){
   people = rows.map(cols=>{
     const birth = cols[idx('生年月日')]?new Date(cols[idx('生年月日')]):null;
     const promo = cols[idx('四段昇段日')]?new Date(cols[idx('四段昇段日')]):null;
+    const rawTitle = (cols[idx('タイトル保持者')]||'').trim();
     return {
       status: cols[idx('状態')],
       noStr: cols[idx('棋士番号')],
@@ -65,15 +66,15 @@ async function loadData(){
       dan: cols[idx('段位')],
       birthStr: cols[idx('生年月日')]||'',
       birth,
-      titleRank: (cols[idx('タイトル保持者')]||'').trim(),
+      titleRank: rawTitle === '' ? Infinity : Number(rawTitle),
       prom,
       d5: cols[idx('五段昇段日')]?new Date(cols[idx('五段昇段日')]):null,
       d6: cols[idx('六段昇段日')]?new Date(cols[idx('六段昇段日')]):null,
       d7: cols[idx('七段昇段日')]?new Date(cols[idx('七段昇段日')]):null,
       d8: cols[idx('八段昇段日')]?new Date(cols[idx('八段昇段日')]):null,
       d9: cols[idx('九段昇段日')]?new Date(cols[idx('九段昇段日')]):null,
-      currentAgeDays: birth?daysBetween(birth,today):null,
-      promoAgeDays: (birth&&promo)?daysBetween(birth,promo):null
+      currentAgeDays: birth?daysBetween(birth,today):0,
+      promoAgeDays: (birth&&promo)?daysBetween(birth,promo):0
     };
   });
 }
@@ -101,13 +102,14 @@ function renderMobileTable(data,criterion=""){
 }
 
 function renderMobileInitial(){
+  if(people.length===0)return;
   const sorted=[...getFilteredPeople()].sort((a,b)=>{
     const as=stateOrderAsc[a.status]??99;
     const bs=stateOrderAsc[b.status]??99;
     if(as!==bs) return as-bs;
     if(a.status==='現役'){
-      const at=a.titleRank?Number(a.titleRank):Infinity;
-      const bt=b.titleRank?Number(b.titleRank):Infinity;
+      const at=a.titleRank;
+      const bt=b.titleRank;
       if(at!==bt) return at-bt;
     }
     const ar=rankOrderMap[a.dan]??0;
@@ -135,8 +137,8 @@ function applyMobileSort(){
         const bState=stateOrderAsc[b.status]??99;
         if(aState!==bState) return currentSortOrder==='asc'?aState-bState:bState-aState;
         if(a.status==='現役'){
-          const aTitle=a.titleRank?Number(a.titleRank):Infinity;
-          const bTitle=b.titleRank?Number(b.titleRank):Infinity;
+          const aTitle=a.titleRank;
+          const bTitle=b.titleRank;
           if(aTitle!==bTitle) return currentSortOrder==='asc'?aTitle-bTitle:bTitle-aTitle;
           const aRank=rankOrderMap[a.dan]??0;
           const bRank=rankOrderMap[b.dan]??0;
@@ -153,7 +155,9 @@ function applyMobileSort(){
   renderMobileTable(sorted,criterion);
 }
 
-loadData().then(renderMobileInitial);
+loadData().then(()=>{
+  if(people.length>0) renderMobileInitial();
+});
 
 document.getElementById('sort-select').addEventListener('change',applyMobileSort);
 document.querySelectorAll('input[name="sortOrder"]').forEach(r=>r.addEventListener('change',applyMobileSort));
