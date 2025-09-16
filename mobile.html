@@ -1,55 +1,47 @@
 <!DOCTYPE html><html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>棋士データ検索（スマホ版）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>棋士データ検索（モバイル）</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>棋士データ検索（スマホ版）</h1>  <div class="controls">
-    <label for="sort-select">並び替え基準:</label>
+  <h1>棋士データ検索</h1>
+  <div>
+    <label><input type="checkbox" id="activeOnly" checked> 現役棋士のみ表示</label>
     <select id="sort-select">
-      <option value="">-- 並び替え未選択 --</option>
+      <option value="dan">段位</option>
       <option value="kishiNumber">棋士番号</option>
       <option value="birthdate">生年月日</option>
       <option value="currentAge">現年齢</option>
       <option value="ageAtPromotion">四段昇段時年齢</option>
-      <option value="dan">段位</option>
     </select>
-    <div>
-      <label><input type="radio" name="sortOrder" value="asc" checked> 昇順</label>
-      <label><input type="radio" name="sortOrder" value="desc"> 降順</label>
-    </div>
-    <label style="display:block;margin:.4em 0;">
-      <input type="checkbox" id="m-activeOnly" checked> 現役のみ表示
-    </label>
-    <button type="button" onclick="applyMobileSort()">並び替える</button>
-  </div>  <table id="mobile-table">
-    <thead>
-      <tr>
-        <th class="rank">順位</th>
-        <th>棋士名</th>
-        <th id="col-label">段位</th>
-      </tr>
-    </thead>
+    <label><input type="radio" name="sortOrder" value="asc" checked> 昇順</label>
+    <label><input type="radio" name="sortOrder" value="desc"> 降順</label>
+  </div>
+  <table id="mobile-table">
+    <thead><tr id="thead-row">
+      <th class="rank">順位</th>
+      <th>棋士名</th>
+      <th id="col-label">段位</th>
+    </tr></thead>
     <tbody></tbody>
   </table><script>
 let people = [];
 let currentSortOrder = 'asc';
 
-const stateOrderAsc = { "現役": 0, "引退": 1, "物故": 2, "退会": 3 };
-const rankOrderMap = { "九段": 9, "八段": 8, "七段": 7, "六段": 6, "五段": 5, "四段": 4 };
+const stateOrderAsc = {"現役":1,"引退":2,"物故":3,"退会":4};
+const rankOrderMap = {"九段":9,"八段":8,"七段":7,"六段":6,"五段":5,"四段":4};
 
-function parseDate(str){ const d=new Date(str); return isNaN(d)?null:d; }
-function toNumber(str){ const n=Number(str); return isNaN(n)?Infinity:n; }
+function daysBetween(d1,d2){return Math.floor((d2-d1)/86400000);}
 function getDanPromotionDate(p){
   switch(p.dan){
-    case '九段': return p.d9 || null;
-    case '八段': return p.d8 || null;
-    case '七段': return p.d7 || null;
-    case '六段': return p.d6 || null;
-    case '五段': return p.d5 || null;
-    case '四段': return p.prom || null;
+    case '九段': return p.d9;
+    case '八段': return p.d8;
+    case '七段': return p.d7;
+    case '六段': return p.d6;
+    case '五段': return p.d5;
+    case '四段': return p.prom;
     default: return null;
   }
 }
@@ -57,122 +49,114 @@ function getDanPromotionDate(p){
 async function loadData(){
   const res = await fetch('kishi.csv');
   const text = await res.text();
-  const rows = text.trim().split(/\r?\n/).map(r=>r.split(','));
+  const rows = text.trim().split(/\n/).map(r=>r.split(','));
   const header = rows.shift();
-  const idx = name => header.findIndex(h => h === name);
-  const today = new Date();
+  const idx = n => header.findIndex(h=>h===n);
+  const today=new Date();
 
   people = rows.map(cols=>{
+    const birth = cols[idx('生年月日')]?new Date(cols[idx('生年月日')]):null;
+    const promo = cols[idx('四段昇段日')]?new Date(cols[idx('四段昇段日')]):null;
     return {
+      status: cols[idx('状態')],
+      noStr: cols[idx('棋士番号')],
+      noNum: Number(cols[idx('棋士番号')]),
       name: cols[idx('棋士名')],
-      birthStr: cols[idx('生年月日')],
-      promStr:  cols[idx('四段昇段日')],
-      noStr:    cols[idx('棋士番号')],
-      noNum:    toNumber(cols[idx('棋士番号')]),
-      dan:      cols[idx('段位')],
-      titleRank: cols[idx('タイトル保持者')] || '',
-      status:   cols[idx('状態')] || '現役',
-      birth: parseDate(cols[idx('生年月日')]),
-      prom: parseDate(cols[idx('四段昇段日')]),
-      d5: parseDate(cols[idx('五段昇段日')]),
-      d6: parseDate(cols[idx('六段昇段日')]),
-      d7: parseDate(cols[idx('七段昇段日')]),
-      d8: parseDate(cols[idx('八段昇段日')]),
-      d9: parseDate(cols[idx('九段昇段日')])
+      dan: cols[idx('段位')],
+      birthStr: cols[idx('生年月日')]||'',
+      birth,
+      titleRank: (cols[idx('タイトル保持者')]||'').trim(),
+      prom,
+      d5: cols[idx('五段昇段日')]?new Date(cols[idx('五段昇段日')]):null,
+      d6: cols[idx('六段昇段日')]?new Date(cols[idx('六段昇段日')]):null,
+      d7: cols[idx('七段昇段日')]?new Date(cols[idx('七段昇段日')]):null,
+      d8: cols[idx('八段昇段日')]?new Date(cols[idx('八段昇段日')]):null,
+      d9: cols[idx('九段昇段日')]?new Date(cols[idx('九段昇段日')]):null,
+      currentAgeDays: birth?daysBetween(birth,today):null,
+      promoAgeDays: (birth&&promo)?daysBetween(birth,promo):null
     };
   });
 }
 
 function getFilteredPeople(){
-  return document.getElementById('m-activeOnly').checked
-    ? people.filter(p=>p.status==='現役')
-    : people;
+  return document.getElementById('activeOnly').checked?people.filter(p=>p.status==='現役'):people;
 }
 
-function renderMobileTable(data, criterion=""){
-  const tbody = document.querySelector('#mobile-table tbody');
-  tbody.innerHTML = data.map((p,i)=>`
-    <tr>
-      <td class="rank">${i+1}</td>
-      <td>${p.name}</td>
-      <td>${criterion==='kishiNumber' ? (p.noStr || '') : p.dan || ''}</td>
-    </tr>
-  `).join('');
+function renderMobileTable(data,criterion=""){
+  document.getElementById('col-label').textContent =
+    criterion==='kishiNumber'? '棋士番号':
+    criterion==='birthdate'? '生年月日':
+    criterion==='currentAge'? '現年齢':
+    criterion==='ageAtPromotion'? '四段昇段時年齢': '段位';
+
+  const tbody=document.querySelector('#mobile-table tbody');
+  tbody.innerHTML=data.map((p,i)=>{
+    let third = p.dan;
+    if(criterion==='kishiNumber') third=p.noStr;
+    if(criterion==='birthdate') third=p.birthStr;
+    if(criterion==='currentAge') third=p.currentAgeDays?Math.floor(p.currentAgeDays/365)+"歳":"";
+    if(criterion==='ageAtPromotion') third=p.promoAgeDays?Math.floor(p.promoAgeDays/365)+"歳":"";
+    return `<tr><td class="rank">${i+1}</td><td>${p.name}</td><td>${third}</td></tr>`;
+  }).join('');
 }
 
 function renderMobileInitial(){
-  document.getElementById('col-label').textContent = '段位';
-  const sorted = [...getFilteredPeople()].sort((a,b)=>{
-    // 段位順でソート（現役はタイトル保持者優先 → 段位 → 昇段日 → 棋士番号）
-    const as = stateOrderAsc[a.status] ?? 99;
-    const bs = stateOrderAsc[b.status] ?? 99;
-    if (as !== bs) return as - bs;
-
-    if (a.status === '現役') {
-      const at = a.titleRank ? Number(a.titleRank) : Infinity;
-      const bt = b.titleRank ? Number(b.titleRank) : Infinity;
-      if (at !== bt) return at - bt;
+  const sorted=[...getFilteredPeople()].sort((a,b)=>{
+    const as=stateOrderAsc[a.status]??99;
+    const bs=stateOrderAsc[b.status]??99;
+    if(as!==bs) return as-bs;
+    if(a.status==='現役'){
+      const at=a.titleRank?Number(a.titleRank):Infinity;
+      const bt=b.titleRank?Number(b.titleRank):Infinity;
+      if(at!==bt) return at-bt;
     }
-
-    const ar = rankOrderMap[a.dan] ?? 0;
-    const br = rankOrderMap[b.dan] ?? 0;
-    if (ar !== br) return br - ar;
-
-    const ad = getDanPromotionDate(a);
-    const bd = getDanPromotionDate(b);
-    const av = ad ? ad.getTime() : Infinity;
-    const bv = bd ? bd.getTime() : Infinity;
-    if (av !== bv) return av - bv;
-
-    return a.noNum - b.noNum;
+    const ar=rankOrderMap[a.dan]??0;
+    const br=rankOrderMap[b.dan]??0;
+    if(ar!==br) return br-ar;
+    const ad=getDanPromotionDate(a)?.getTime()??Infinity;
+    const bd=getDanPromotionDate(b)?.getTime()??Infinity;
+    if(ad!==bd) return ad-bd;
+    return a.noNum-b.noNum;
   });
-  renderMobileTable(sorted, 'dan');
+  renderMobileTable(sorted,'dan');
 }
 
 function applyMobileSort(){
-  const orderRadio = document.querySelector('input[name="sortOrder"]:checked');
-  currentSortOrder = orderRadio ? orderRadio.value : 'asc';
-  const criterion = document.getElementById('sort-select').value;
-
-  const sorted = [...getFilteredPeople()].sort((a,b)=>{
+  const criterion=document.getElementById('sort-select').value;
+  currentSortOrder=document.querySelector('input[name="sortOrder"]:checked').value;
+  const sorted=[...getFilteredPeople()].sort((a,b)=>{
     switch(criterion){
       case 'kishiNumber': return currentSortOrder==='asc'?a.noNum-b.noNum:b.noNum-a.noNum;
       case 'birthdate': return currentSortOrder==='asc'?(a.birth?.getTime()??Infinity)-(b.birth?.getTime()??Infinity):(b.birth?.getTime()??Infinity)-(a.birth?.getTime()??Infinity);
       case 'currentAge': return currentSortOrder==='asc'?a.currentAgeDays-b.currentAgeDays:b.currentAgeDays-a.currentAgeDays;
       case 'ageAtPromotion': return currentSortOrder==='asc'?a.promoAgeDays-b.promoAgeDays:b.promoAgeDays-a.promoAgeDays;
-      case 'dan': {
+      case 'dan':{
         const aState=stateOrderAsc[a.status]??99;
         const bState=stateOrderAsc[b.status]??99;
         if(aState!==bState) return currentSortOrder==='asc'?aState-bState:bState-aState;
-
         if(a.status==='現役'){
           const aTitle=a.titleRank?Number(a.titleRank):Infinity;
           const bTitle=b.titleRank?Number(b.titleRank):Infinity;
           if(aTitle!==bTitle) return currentSortOrder==='asc'?aTitle-bTitle:bTitle-aTitle;
-
           const aRank=rankOrderMap[a.dan]??0;
           const bRank=rankOrderMap[b.dan]??0;
           if(aRank!==bRank) return currentSortOrder==='asc'?bRank-aRank:aRank-bRank;
-
           const aDate=getDanPromotionDate(a)?.getTime()??Infinity;
           const bDate=getDanPromotionDate(b)?.getTime()??Infinity;
           return currentSortOrder==='asc'?aDate-bDate:bDate-aDate;
         }
         return currentSortOrder==='asc'?a.noNum-b.noNum:b.noNum-a.noNum;
       }
-      default: return 0;
+      default:return 0;
     }
   });
-  renderMobileTable(sorted, criterion);
+  renderMobileTable(sorted,criterion);
 }
 
-(async()=>{
-  await loadData();
-  renderMobileInitial();
-  document.getElementById('m-activeOnly').addEventListener('change', ()=>{
-    const criterion = document.getElementById('sort-select').value;
-    if (criterion) applyMobileSort(); else renderMobileInitial();
-  });
-})();
+loadData().then(renderMobileInitial);
+
+document.getElementById('sort-select').addEventListener('change',applyMobileSort);
+document.querySelectorAll('input[name="sortOrder"]').forEach(r=>r.addEventListener('change',applyMobileSort));
+document.getElementById('activeOnly').addEventListener('change',renderMobileInitial);
 </script></body>
 </html>
