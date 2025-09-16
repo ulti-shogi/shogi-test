@@ -128,14 +128,13 @@ function sortByDan(list, order='asc'){
   });
 }
 
-/** ★ 初期表示：4列（順位・棋士名・段位・棋士番号） */
+/** ★ 初期表示：3列（順位・棋士名・段位） */
 function renderInitialTable(data){
   const thead = document.getElementById('thead-row');
   thead.innerHTML = `
     <th class="rank">順位</th>
     <th>棋士名</th>
     <th id="col-label">段位</th>
-    <th>棋士番号</th>
   `;
   const tbody = document.querySelector('#mobile-table tbody');
   tbody.innerHTML = data.map((p,i)=>`
@@ -143,7 +142,6 @@ function renderInitialTable(data){
       <td class="rank">${i+1}</td>
       <td>${p.name}</td>
       <td>${p.dan || ''}</td>
-      <td>${p.noStr || ''}</td>
     </tr>
   `).join('');
 }
