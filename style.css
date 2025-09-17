@@ -229,3 +229,30 @@ th.sorted-desc::after {
   align-items: center;
   margin-right: 0.8em;
 }
+/* --- 右寄り&出っぱなし対策（style-right.css の最後に追記）--- */
+
+/* 1) hidden 属性を最優先にして、常時表示を止める */
+#filter-panel[hidden] { 
+  display: none !important; 
+}
+
+/* 2) フィルタ項目を左から並べる（右寄りの根を断つ） */
+#filter-panel { 
+  text-align: left !important; 
+}
+
+#filter-panel fieldset { 
+  display: flex !important;         /* 行内の並びをこちらで制御 */
+  flex-wrap: wrap !important;       /* 狭い幅でも左から折り返す */
+  justify-content: flex-start !important; 
+  align-items: flex-start !important;
+  margin: 0 0 .5em 0 !important;
+  padding: 0 !important;
+}
+
+#filter-panel label { 
+  display: inline-flex !important;  /* □ とテキストを横並び */
+  align-items: center !important;
+  margin-right: .8em !important;    /* 均等な間隔だけ付ける */
+  margin-left: 0 !important;
+}
