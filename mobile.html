@@ -11,7 +11,7 @@
 
   <div class="controls">
     <!-- ▼ 追加：フィルタパネルのトグル -->
-    <button type="button" id="toggle-filters">🔍 フィルタ条件</button>
+    <button type="button" id="toggle-filters" aria-expanded="false" aria-controls="filter-panel">🔍 フィルタ条件</button>
 
     <!-- ▼ 追加：フィルタパネル本体（状態／段位／年齢）。絞り込みUIのみ追加 -->
     <div id="filter-panel" hidden style="grid-column: 1 / -1;">
@@ -428,16 +428,33 @@ function applyFiltersAndSort(){
     renderSortedTable(sorted, criterion);
   }
   updateStatusSummary(sorted, criterion);
+
+  // ▼ 追加：検索確定後はフィルタパネルを閉じ、ボタン状態を同期（最小差分）
+  const panel = document.getElementById('filter-panel');
+  const btn   = document.getElementById('toggle-filters');
+  if (panel && !panel.hidden) {
+    panel.hidden = true;
+    btn?.classList.remove('active');
+    btn?.setAttribute('aria-expanded', 'false');
+    btn?.blur();
+  }
+  // 任意：結果サマリーへスクロール
+  document.getElementById('status-summary')?.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
 /* ===== 起動時の初期化（既存＋最低限の追加） ===== */
 (async()=>{
   await loadData();
 
-  // フィルタパネル開閉
-  document.getElementById('toggle-filters')?.addEventListener('click', ()=>{
+  // フィルタパネル開閉（置換：開閉状態に合わせて active/aria を同期）
+  const toggleBtn = document.getElementById('toggle-filters');
+  toggleBtn?.addEventListener('click', ()=>{
     const p = document.getElementById('filter-panel');
-    if (p) p.hidden = !p.hidden;
+    if (!p) return;
+    const willOpen = p.hidden;   // これから開くか？
+    p.hidden = !p.hidden;        // 表示切り替え
+    toggleBtn.classList.toggle('active', willOpen);
+    toggleBtn.setAttribute('aria-expanded', String(willOpen));
   });
 
   // リセット：現役のみON／段位全OFF／年齢未指定
