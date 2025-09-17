@@ -261,3 +261,8 @@ function renderCards(data, criterion) {
   border-radius: 10px;
   box-shadow: 0 6px 20px rgba(0,0,0,.08);
 }            
+
+/* 絶対配置の基準を .controls にする */
+.controls {
+  position: relative;  /* ← これを追加 */
+}
