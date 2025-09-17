@@ -247,3 +247,20 @@ function renderCards(data, criterion) {
   padding: 0.4em 0.8em;
   height: auto; /* 余計な高さ指定を無効化 */
 }
+/* フィルタ条件ボタンを横長一行に固定（改行防止はそのまま） */
+#toggle-filters{
+  white-space: nowrap;
+  grid-column: 1 / -1;      /* ← ここでグリッド1行を占有させる */
+  justify-self: start;
+}
+
+/* サマリは1行で左寄せ・全幅に（右カラムに吸い込まれないように） */
+#status-summary{
+  grid-column: 1 / -1;      /* ← サマリも1行使って左から配置 */
+  justify-self: start;
+}
+
+/* （任意）表示モードのラベルの改行を防止してレイアウトのガタつきを抑える */
+.view-toggle label{
+  white-space: nowrap;
+}
