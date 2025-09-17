@@ -232,3 +232,8 @@ function renderCards(data, criterion) {
   .card-meta{font-size:.85rem;color:#666}
   .empty-state{padding:16px;text-align:center;color:#666;border:1px dashed #ddd;border-radius:10px;background:#fafafa}
 </style>
+
+            /* フィルタ条件ボタンを横長一行に保つ */
+#toggle-filters {
+  white-space: nowrap;  /* ← 改行を許さず横に広がる */
+}
