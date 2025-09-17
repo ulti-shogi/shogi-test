@@ -38,6 +38,21 @@
     <tbody></tbody>
   </table>
 
+    <p style="margin-top:1em;">
+  <p style="margin-top:1em; display: flex; justify-content: space-between; align-items: center;">
+  <a href="index.html?force=1">▶ PC版を表示</a>
+  <a href="#" id="scrollTopLink">▲ トップへ戻る</a>
+</p>
+
+<script>
+  // ▼ トップへ戻るリンクの動作
+  document.getElementById('scrollTopLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+</script>
+</p>
+
 <script>
 let people = [];
 let currentSortOrder = 'asc';
