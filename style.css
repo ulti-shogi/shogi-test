@@ -232,17 +232,18 @@ function renderCards(data, criterion) {
   .card-meta{font-size:.85rem;color:#666}
   .empty-state{padding:16px;text-align:center;color:#666;border:1px dashed #ddd;border-radius:10px;background:#fafafa}
 </style>
+/* controls グリッド内のアイテムを縦方向に引き伸ばさない */
+.controls {
+  align-items: start; /* ← stretchを解除して内容の高さで揃える */
+}
 
-            
-/* ==== フィルタ条件ボタンを常に横長・中央揃えにする ==== */
+/* フィルタ条件ボタンを横長一行＆中央寄せに */
 #toggle-filters {
-  display: inline-flex;         /* 横方向のフレックスボックス */
-  align-items: center;          /* アイコンと文字を縦中央揃え */
-  justify-content: center;      /* 水平方向も中央寄せ */
-  gap: 0.3em;                   /* アイコンとテキストの間隔 */
-  padding: 0.4em 0.8em;         /* コンパクトな上下左右余白 */
-  white-space: nowrap;          /* 強制的に1行にする */
-  height: auto !important;      /* 他CSSで高さが指定されても解除 */
-  min-height: unset !important; /* ブラウザ標準の最小高さも解除 */
-  box-sizing: border-box;       /* パディング込みで幅計算 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3em;
+  white-space: nowrap;
+  padding: 0.4em 0.8em;
+  height: auto; /* 余計な高さ指定を無効化 */
 }
