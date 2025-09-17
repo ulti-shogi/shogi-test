@@ -93,3 +93,38 @@ th.sorted-asc::after {
 th.sorted-desc::after {
   content: "▼";
 }
+
+function renderCards(data, criterion) {
+  const wrap = document.getElementById('card-container');
+  if (!data || data.length === 0) {
+    wrap.innerHTML = `<div class="empty-state">該当する棋士がいません</div>`;
+    return;
+  }
+  wrap.innerHTML = data.map(p => {
+    const statusClass =
+      p.status === '現役' ? 'pill-status' : 'pill-status retired';
+    // 3つめの軸（カードでも見せたい要点）を選択
+    const third =
+      criterion === 'kishiNumber'    ? (p.noStr || '') :
+      criterion === 'birthdate'      ? (p.birthStr || '') :
+      criterion === 'currentAge'     ? (p.currentAgeParts ? formatYMD(p.currentAgeParts) : '') :
+      criterion === 'ageAtPromotion' ? (p.promoAgeParts ? formatYMD(p.promoAgeParts) : '') :
+                                       (p.dan || '');
+
+    return `
+      <article class="card">
+        <div class="card-header">
+          <div class="card-name">${p.name}</div>
+          <div class="badge-dan">${p.dan || ''}</div>
+          <div class="${statusClass}">${p.status}</div>
+        </div>
+        <div class="card-body">
+          <div class="card-meta">棋士番号：${p.noStr || '-'}</div>
+          <div>${labelMap[criterion || 'dan'] || '段位'}：${third || '-'}</div>
+          ${p.promStr ? `<div>四段昇段日：${p.promStr}</div>` : ''}
+          ${p.currentAgeParts ? `<div>現年齢：${formatYMD(p.currentAgeParts)}</div>` : ''}
+        </div>
+      </article>
+    `;
+  }).join('');
+}
