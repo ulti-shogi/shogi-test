@@ -232,37 +232,3 @@ function renderCards(data, criterion) {
   .card-meta{font-size:.85rem;color:#666}
   .empty-state{padding:16px;text-align:center;color:#666;border:1px dashed #ddd;border-radius:10px;background:#fafafa}
 </style>
-
-/* ==== Filters: ドロップダウン化 & ボタン折り返し防止 ==== */
-
-/* ボタンを一行で保持（縦長化の原因を遮断） */
-#toggle-filters{
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;   /* ← これで「フ ィ ル タ 条 件」と縦並びにならない */
-}
-
-/* パネルは .controls の真下にフル幅ドロップダウンで重ねる */
-.controls{ position: sticky; top: 0; z-index: 10; } /* 既存だが念のための前提 */
-#filter-panel{
-  position: absolute;     /* グリッドのフローから外す＝レイアウトを崩さない */
-  left: 0;
-  right: 0;
-  top: calc(100% + 8px);  /* ボタンのすぐ下に表示 */
-  z-index: 50;
-  max-height: 65vh;       /* 画面からはみ出さないようスクロール */
-  overflow: auto;
-
-  /* 見た目（好みで調整可。既存を壊さない軽い装飾） */
-  padding: 8px 10px;
-  background: #fafafa;
-  border: 1px solid #eee;
-  border-radius: 10px;
-  box-shadow: 0 6px 20px rgba(0,0,0,.08);
-}            
-
-/* 絶対配置の基準を .controls にする */
-.controls {
-  position: relative;  /* ← これを追加 */
-}
