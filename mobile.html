@@ -4,7 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>棋士データ検索（スマホ版）</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=cardfix1">
+  <style>
+  /* カードの並び：スマホ1列、広めで2列 */
+  .cards{display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px}
+  @media (min-width:480px){.cards{grid-template-columns:1fr 1fr}}
+
+  /* 1枚のカードの見た目（“箱化”の核心） */
+  .card{background:#fff;border:1px solid #eee;border-radius:12px;padding:12px 12px 10px;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+  .card-header{display:flex;align-items:baseline;gap:8px;margin-bottom:6px}
+  .card-name{font-weight:700;font-size:1.05rem}
+  .badge-dan{font-size:.85rem;background:#f3f4f6;padding:2px 8px;border-radius:9999px;white-space:nowrap}
+  .pill-status{margin-left:auto;font-size:.8rem;padding:2px 8px;border-radius:9999px;background:#eef7ee;color:#1f7a1f}
+  .pill-status.retired{background:#f7f1ee;color:#7a3a1f}
+  .card-body{display:grid;gap:4px;font-size:.92rem;color:#333}
+  .card-meta{font-size:.85rem;color:#666}
+  .empty-state{padding:16px;text-align:center;color:#666;border:1px dashed #ddd;border-radius:10px;background:#fafafa}
+</style>
 </head>
 <body>
   <h1>棋士データ検索（スマホ版）</h1>
