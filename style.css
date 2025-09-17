@@ -264,3 +264,20 @@ function renderCards(data, criterion) {
 .view-toggle label{
   white-space: nowrap;
 }
+/* フィルタパネルを必ず左寄せにする（右寄り問題の解消） */
+#filter-panel {
+  display: block !important;     /* gridやflex指定を解除 */
+  text-align: left !important;   /* 中身を左揃え */
+}
+
+#filter-panel fieldset {
+  display: block !important;     /* 横並び指定を解除 */
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+#filter-panel label {
+  display: inline-flex !important; /* チェックボックスと文字を横並び */
+  align-items: center;
+  margin-right: 0.8em;
+}
