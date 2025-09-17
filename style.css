@@ -233,7 +233,16 @@ function renderCards(data, criterion) {
   .empty-state{padding:16px;text-align:center;color:#666;border:1px dashed #ddd;border-radius:10px;background:#fafafa}
 </style>
 
-            /* フィルタ条件ボタンを横長一行に保つ */
+            
+/* ==== フィルタ条件ボタンを常に横長・中央揃えにする ==== */
 #toggle-filters {
-  white-space: nowrap;  /* ← 改行を許さず横に広がる */
+  display: inline-flex;         /* 横方向のフレックスボックス */
+  align-items: center;          /* アイコンと文字を縦中央揃え */
+  justify-content: center;      /* 水平方向も中央寄せ */
+  gap: 0.3em;                   /* アイコンとテキストの間隔 */
+  padding: 0.4em 0.8em;         /* コンパクトな上下左右余白 */
+  white-space: nowrap;          /* 強制的に1行にする */
+  height: auto !important;      /* 他CSSで高さが指定されても解除 */
+  min-height: unset !important; /* ブラウザ標準の最小高さも解除 */
+  box-sizing: border-box;       /* パディング込みで幅計算 */
 }
