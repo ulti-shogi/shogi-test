@@ -5,12 +5,53 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>棋士データ検索（スマホ版）</title>
   <link rel="stylesheet" href="style.css?v=cardfix2">
-  
 </head>
 <body>
   <h1>棋士データ検索（スマホ版）</h1>
 
   <div class="controls">
+    <!-- ▼ 追加：フィルタパネルのトグル -->
+    <button type="button" id="toggle-filters">🔍 フィルタ条件</button>
+
+    <!-- ▼ 追加：フィルタパネル本体（状態／段位／年齢）。絞り込みUIのみ追加 -->
+    <div id="filter-panel" hidden style="grid-column: 1 / -1;">
+      <fieldset>
+        <legend>状態</legend>
+        <label><input type="checkbox" class="filter-status" value="現役" checked> 現役</label>
+        <label><input type="checkbox" class="filter-status" value="引退"> 引退</label>
+        <label><input type="checkbox" class="filter-status" value="物故"> 物故</label>
+        <label><input type="checkbox" class="filter-status" value="退会"> 退会</label>
+      </fieldset>
+
+      <fieldset style="margin-top:.4em;">
+        <legend>段位</legend>
+        <label><input type="checkbox" class="filter-dan" value="九段"> 九段</label>
+        <label><input type="checkbox" class="filter-dan" value="八段"> 八段</label>
+        <label><input type="checkbox" class="filter-dan" value="七段"> 七段</label>
+        <label><input type="checkbox" class="filter-dan" value="六段"> 六段</label>
+        <label><input type="checkbox" class="filter-dan" value="五段"> 五段</label>
+        <label><input type="checkbox" class="filter-dan" value="四段"> 四段</label>
+      </fieldset>
+
+      <fieldset style="margin-top:.4em;">
+        <legend>年齢</legend>
+        <input type="number" id="age-min" inputmode="numeric" placeholder="最小"> 〜
+        <input type="number" id="age-max" inputmode="numeric" placeholder="最大">
+      </fieldset>
+
+      <div style="margin-top:.4em;">
+        <button type="button" id="reset-filters">リセット</button>
+      </div>
+    </div>
+
+    <!-- 既存：表示モード切替＋サマリ（変更なし） -->
+    <div class="view-toggle" role="group" aria-label="表示モード">
+      <label><input type="radio" name="viewMode" id="view-table" value="table" checked> 一覧</label>
+      <label><input type="radio" name="viewMode" id="view-card"  value="card"> カード</label>
+    </div>
+    <div id="status-summary" class="status-summary" aria-live="polite"></div>
+
+    <!-- 既存：並び替えUI（ラベル文言のみそのまま／機能は検索ボタンで一括適用） -->
     <label for="sort-select">並び替え基準:</label>
     <select id="sort-select">
       <option value="">-- 並び替え未選択 --</option>
@@ -25,17 +66,8 @@
       <label><input type="radio" name="sortOrder" value="desc"> 降順</label>
     </div>
 
-    <!-- 表示モード切替 + サマリ -->
-    <div class="view-toggle" role="group" aria-label="表示モード">
-      <label><input type="radio" name="viewMode" id="view-table" value="table" checked> 一覧</label>
-      <label><input type="radio" name="viewMode" id="view-card"  value="card"> カード</label>
-    </div>
-    <div id="status-summary" class="status-summary" aria-live="polite"></div>
-
-    <label style="display:block;margin:.4em 0;">
-      <input type="checkbox" id="m-activeOnly" checked> 現役のみ表示
-    </label>
-    <button type="button" onclick="applyMobileSort()">並び替える</button>
+    <!-- ▼ 置換：従来の「並び替える」→「検索」ボタンに置換（機能は一括適用） -->
+    <button type="button" id="apply-filters">検索</button>
   </div>
 
   <table id="mobile-table">
@@ -45,7 +77,7 @@
     <tbody></tbody>
   </table>
 
-  <!-- カード表示用 -->
+  <!-- カード表示用（既存） -->
   <div id="card-container" class="cards" hidden></div>
 
   <p style="margin-top:1em; display:flex; justify-content:space-between; align-items:center;">
@@ -54,7 +86,7 @@
   </p>
 
 <script>
-  // トップへ戻る
+  // トップへ戻る（既存）
   document.getElementById('scrollTopLink').addEventListener('click', (e) => {
     e.preventDefault();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -77,7 +109,7 @@ const labelMap = {
 const stateOrderAsc = { "現役": 0, "引退": 1, "物故": 2, "退会": 3 };
 const rankOrderMap   = { "九段": 9, "八段": 8, "七段": 7, "六段": 6, "五段": 5, "四段": 4 };
 
-/* ===== 補助関数 ===== */
+/* ===== 補助関数（既存） ===== */
 function parseDate(str){ const d=new Date(str); return isNaN(d)?null:d; }
 function toNumber(str){ const n=Number(str); return isNaN(n)?Infinity:n; }
 function diffYMD(a,b){
@@ -94,7 +126,7 @@ function diffYMD(a,b){
 }
 function formatYMD(p){ return p?`${p.y}歳${p.m}ヶ月${p.d}日`:''; }
 
-// 現在段位の到達日
+// 現在段位の到達日（既存）
 function getDanPromotionDate(p){
   switch(p.dan){
     case '九段': return p.d9 || null;
@@ -107,7 +139,7 @@ function getDanPromotionDate(p){
   }
 }
 
-/* ===== データ読み込み ===== */
+/* ===== データ読み込み（既存） ===== */
 async function loadData(){
   const res  = await fetch('kishi.csv');
   const text = await res.text();
@@ -147,14 +179,7 @@ async function loadData(){
   });
 }
 
-/* ===== 段位系の標準並び（元仕様に復元） =====
-   昇順：
-   1) 状態（現役優先）
-   2) 現役内で titleRank 昇順（1が最上位、空=Infinity=末尾）
-   3) 段位は「九→四」（rankOrderMapは9>4だが比較を逆にする）
-   4) 現在段位の到達日（早いほうが上）
-   5) 棋士番号
-*/
+/* ===== 段位ソート（既存） ===== */
 function sortByDan(list, order='asc'){
   const asc = (order==='asc');
   return [...list].sort((a,b)=>{
@@ -169,7 +194,7 @@ function sortByDan(list, order='asc'){
       const bt = b.titleRank ? Number(b.titleRank) : Infinity;
       if (at !== bt) return asc ? at - bt : bt - at;
 
-      // 3) 段位（昇順=九→四）。rankOrderMapは数が大きいほど高段位なので比較を逆に
+      // 3) 段位（昇順=九→四）
       const ar = rankOrderMap[a.dan] ?? 0;
       const br = rankOrderMap[b.dan] ?? 0;
       if (ar !== br) return asc ? br - ar : ar - br;
@@ -185,12 +210,12 @@ function sortByDan(list, order='asc'){
       return asc ? a.noNum - b.noNum : b.noNum - a.noNum;
     }
 
-    // 現役以外（引退・物故・退会）は棋士番号で並べる
+    // 現役以外は棋士番号で並べる
     return asc ? a.noNum - b.noNum : b.noNum - a.noNum;
   });
 }
 
-/* ===== 表描画 ===== */
+/* ===== テーブル描画（既存） ===== */
 function renderInitialTable(data){
   const thead = document.getElementById('thead-row');
   thead.innerHTML = `
@@ -242,7 +267,7 @@ function renderSortedTable(data, criterion){
   }).join('');
 }
 
-/* ===== カード描画・サマリ・表示切替 ===== */
+/* ===== カード描画（既存） ===== */
 function renderCards(data, criterion) {
   const wrap = document.getElementById('card-container');
   if (!data || data.length === 0) {
@@ -263,7 +288,7 @@ function renderCards(data, criterion) {
         <div class="card-header">
           <div class="card-name">${p.name}</div>
           <div class="badge-dan">${p.dan || ''}</div>
-          <div class="${statusClass}">${p.status}</div>
+        <div class="${statusClass}">${p.status}</div>
         </div>
         <div class="card-body">
           <div class="card-meta">棋士番号：${p.noStr || '-'}</div>
@@ -276,18 +301,31 @@ function renderCards(data, criterion) {
   }).join('');
 }
 
+/* ===== サマリ表示（拡張：選択中フィルタの文言反映） ===== */
 function updateStatusSummary(list, criterion) {
   const sum = document.getElementById('status-summary');
   if (!sum) return;
+
   const orderRadio = document.querySelector('input[name="sortOrder"]:checked');
   const order = orderRadio ? orderRadio.value : 'asc';
   const orderLabel = (order === 'asc') ? '昇順' : '降順';
-  const activeOnly = document.getElementById('m-activeOnly').checked;
   const critLabel = criterion ? (labelMap[criterion] || '段位') : '段位';
   const viewLabel = (currentView === 'card') ? 'カード' : '一覧';
-  sum.textContent = `表示：${viewLabel} ／ 並び：${critLabel}・${orderLabel} ／ 条件：${activeOnly ? '現役のみ' : 'すべて'} ／ 件数：${(list || []).length}`;
+
+  const statuses = [...document.querySelectorAll('.filter-status:checked')].map(cb=>cb.value);
+  const dans = [...document.querySelectorAll('.filter-dan:checked')].map(cb=>cb.value);
+  const amin = (document.getElementById('age-min')?.value ?? '');
+  const amax = (document.getElementById('age-max')?.value ?? '');
+  const ageLabel = (amin || amax) ? `${amin||'0'}〜${amax||'∞'}歳` : '指定なし';
+
+  sum.textContent =
+    `表示：${viewLabel} ／ 並び：${critLabel}・${orderLabel} ／ ` +
+    `状態：${statuses.length ? statuses.join('・') : '(未選択)'} ／ ` +
+    `段位：${dans.length ? dans.join('・') : 'すべて'} ／ ` +
+    `年齢：${ageLabel} ／ 件数：${(list || []).length}`;
 }
 
+/* ===== 表示モード切替（既存） ===== */
 function setViewMode(mode) {
   currentView = mode;
   localStorage.setItem('viewMode', mode);
@@ -302,13 +340,45 @@ function setViewMode(mode) {
   }
 }
 
-/* ===== 初期表示＆操作 ===== */
-function getFilteredPeople(){
-  return document.getElementById('m-activeOnly').checked
-    ? people.filter(p=>p.status==='現役')
-    : people;
+/* ===== フィルタ適用 ===== */
+function getCheckedValues(sel){
+  return Array.from(document.querySelectorAll(sel))
+    .filter(el=>el.checked)
+    .map(el=>el.value);
 }
 
+function getFilteredPeople(){
+  const checkedStatus = getCheckedValues('.filter-status');
+  // 状態が0件選択＝結果0件（ユーザー意思を尊重）
+  if (checkedStatus.length === 0) return [];
+
+  const checkedDan = getCheckedValues('.filter-dan');
+
+  const aminEl = document.getElementById('age-min');
+  const amaxEl = document.getElementById('age-max');
+  const useMin = aminEl && aminEl.value !== '';
+  const useMax = amaxEl && amaxEl.value !== '';
+  const min = useMin ? Number(aminEl.value) : -Infinity;
+  const max = useMax ? Number(amaxEl.value) : Infinity;
+
+  return people.filter(p=>{
+    // 状態
+    if (!checkedStatus.includes(p.status)) return false;
+
+    // 段位（未選択＝フィルタ無効）
+    if (checkedDan.length && !checkedDan.includes(p.dan)) return false;
+
+    // 年齢
+    if (useMin || useMax) {
+      if (!p.currentAgeParts) return false;
+      const y = p.currentAgeParts.y;
+      if (y < min || y > max) return false;
+    }
+    return true;
+  });
+}
+
+/* ===== 初期表示（既存の意図を維持：段位基準で昇順初期） ===== */
 function renderMobileInitial(){
   const base = sortByDan(getFilteredPeople(), 'asc');
   if (currentView === 'card') {
@@ -319,10 +389,11 @@ function renderMobileInitial(){
   updateStatusSummary(base, 'dan');
 }
 
-function applyMobileSort(){
+/* ===== 検索ボタン：フィルタ＋並び替え一括適用 ===== */
+function applyFiltersAndSort(){
   const orderRadio = document.querySelector('input[name="sortOrder"]:checked');
   currentSortOrder = orderRadio ? orderRadio.value : 'asc';
-  const criterion = document.getElementById('sort-select').value;
+  const criterion = document.getElementById('sort-select').value || 'dan';
 
   const base = getFilteredPeople();
   let sorted;
@@ -352,32 +423,43 @@ function applyMobileSort(){
   }
 
   if (currentView === 'card') {
-    renderCards(sorted, criterion || 'dan');
+    renderCards(sorted, criterion);
   } else {
-    renderSortedTable(sorted, criterion || 'dan');
+    renderSortedTable(sorted, criterion);
   }
-  updateStatusSummary(sorted, criterion || 'dan');
+  updateStatusSummary(sorted, criterion);
 }
 
+/* ===== 起動時の初期化（既存＋最低限の追加） ===== */
 (async()=>{
   await loadData();
+
+  // フィルタパネル開閉
+  document.getElementById('toggle-filters')?.addEventListener('click', ()=>{
+    const p = document.getElementById('filter-panel');
+    if (p) p.hidden = !p.hidden;
+  });
+
+  // リセット：現役のみON／段位全OFF／年齢未指定
+  document.getElementById('reset-filters')?.addEventListener('click', ()=>{
+    document.querySelectorAll('.filter-status').forEach(cb=> cb.checked = (cb.value === '現役'));
+    document.querySelectorAll('.filter-dan').forEach(cb=> cb.checked = false);
+    const aminEl = document.getElementById('age-min'); if (aminEl) aminEl.value = '';
+    const amaxEl = document.getElementById('age-max'); if (amaxEl) amaxEl.value = '';
+  });
+
+  // 検索ボタン：一括適用
+  document.getElementById('apply-filters')?.addEventListener('click', applyFiltersAndSort);
+
   setViewMode(currentView);
   const vt = document.getElementById('view-table');
   const vc = document.getElementById('view-card');
   if (vt && vc) { if (currentView==='card'){ vc.checked=true; } else { vt.checked=true; } }
+
+  // 初期描画（現役のみ・段位昇順）
   renderMobileInitial();
 
-  // 現役のみ切替
-  document.getElementById('m-activeOnly').addEventListener('change', ()=>{
-    const criterion = document.getElementById('sort-select').value || 'dan';
-    if (!document.getElementById('sort-select').value) {
-      renderMobileInitial();
-    } else {
-      applyMobileSort();
-    }
-  });
-
-  // 表示モード切替
+  // 表示モード切替（既存のまま）
   document.getElementById('view-table').addEventListener('change', (e)=>{
     if (e.target.checked) {
       setViewMode('table');
