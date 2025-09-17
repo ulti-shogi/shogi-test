@@ -24,7 +24,7 @@
       <label><input type="radio" name="sortOrder" value="desc"> 降順</label>
     </div>
 
-    <!-- ▼ 表示モード切替と状態サマリ -->
+    <!-- 表示モード切替 + サマリ -->
     <div class="view-toggle" role="group" aria-label="表示モード">
       <label><input type="radio" name="viewMode" id="view-table" value="table" checked> 一覧</label>
       <label><input type="radio" name="viewMode" id="view-card"  value="card"> カード</label>
@@ -44,10 +44,10 @@
     <tbody></tbody>
   </table>
 
-  <!-- ▼ カード表示用コンテナ（最初は非表示） -->
+  <!-- カード表示用 -->
   <div id="card-container" class="cards" hidden></div>
 
-  <p style="margin-top:1em; display: flex; justify-content: space-between; align-items: center;">
+  <p style="margin-top:1em; display:flex; justify-content:space-between; align-items:center;">
     <a href="index.html?force=1">▶ PC版を表示</a>
     <a href="#" id="scrollTopLink">▲ トップへ戻る</a>
   </p>
@@ -76,7 +76,7 @@ const labelMap = {
 const stateOrderAsc = { "現役": 0, "引退": 1, "物故": 2, "退会": 3 };
 const rankOrderMap   = { "九段": 9, "八段": 8, "七段": 7, "六段": 6, "五段": 5, "四段": 4 };
 
-/* ====== 補助関数 ====== */
+/* ===== 補助関数 ===== */
 function parseDate(str){ const d=new Date(str); return isNaN(d)?null:d; }
 function toNumber(str){ const n=Number(str); return isNaN(n)?Infinity:n; }
 function diffYMD(a,b){
@@ -92,6 +92,8 @@ function diffYMD(a,b){
   return {y,m,d};
 }
 function formatYMD(p){ return p?`${p.y}歳${p.m}ヶ月${p.d}日`:''; }
+
+// 現在段位の到達日
 function getDanPromotionDate(p){
   switch(p.dan){
     case '九段': return p.d9 || null;
@@ -104,17 +106,17 @@ function getDanPromotionDate(p){
   }
 }
 
-/* ====== データ読み込み＆整形 ====== */
+/* ===== データ読み込み ===== */
 async function loadData(){
-  const res = await fetch('kishi.csv');
+  const res  = await fetch('kishi.csv');
   const text = await res.text();
 
-  const lines = text.trim().split(/\r?\n/);
-  const header = lines.shift().split(',');
-  const idx = h => header.indexOf(h);
+  const rows = text.trim().split(/\r?\n/).map(r=>r.split(','));
+  const header = rows.shift();
+  const idx = name => header.findIndex(h=>h===name);
+  const today = new Date();
 
-  people = lines.map(line=>{
-    const cols = line.split(',');
+  people = rows.map(cols=>{
     const birth = parseDate(cols[idx('生年月日')]);
     const prom  = parseDate(cols[idx('四段昇段日')]);
     const d5 = parseDate(cols[idx('五段昇段日')]);
@@ -123,51 +125,71 @@ async function loadData(){
     const d8 = parseDate(cols[idx('八段昇段日')]);
     const d9 = parseDate(cols[idx('九段昇段日')]);
 
-    const now = new Date();
-    const currentAgeParts = birth ? diffYMD(birth, now) : null;
-    const promoAgeParts   = (birth && prom) ? diffYMD(birth, prom) : null;
-
     return {
-      name: (cols[idx('棋士名')]||'').trim(),
-      birthStr: (cols[idx('生年月日')]||'').trim(),
-      promStr:  (cols[idx('四段昇段日')]||'').trim(),
-      noStr:    (cols[idx('棋士番号')]||'').trim(),
-      noNum:    toNumber(cols[idx('棋士番号')]),
-      // ★ ここを修正：「区分」→「状態」＋trim（これが原因）
-      status:   ((cols[idx('状態')]||'').trim()),
-      dan:      (cols[idx('段位')]||'').trim(),
+      name:      (cols[idx('棋士名')]||'').trim(),
+      birthStr:  (cols[idx('生年月日')]||'').trim(),
+      promStr:   (cols[idx('四段昇段日')]||'').trim(),
+      noStr:     (cols[idx('棋士番号')]||'').trim(),
+      noNum:     toNumber(cols[idx('棋士番号')]),
+      dan:       (cols[idx('段位')]||'').trim(),
+      // ★ タイトル保持者ランク（1が最上位、空は未保持→Infinity扱い）
+      titleRank: (cols[idx('タイトル保持者')]||'').trim(),
+      // 状態（現役/引退/物故/退会）
+      status:    ((cols[idx('状態')]||'現役')).trim(),
+
       birth, prom, d5, d6, d7, d8, d9,
-      currentAgeParts,
-      promoAgeParts,
-      currentAgeDays: currentAgeParts ? (currentAgeParts.y*365 + currentAgeParts.m*30 + currentAgeParts.d) : Infinity,
-      promoAgeDays:   promoAgeParts ? (promoAgeParts.y*365 + promoAgeParts.m*30 + promoAgeParts.d) : Infinity,
+      currentAgeParts: birth ? diffYMD(birth,today) : null,
+      promoAgeParts: (birth&&prom) ? diffYMD(birth,prom) : null,
+      currentAgeDays: birth ? Math.floor((today-birth)/86400000) : Infinity,
+      promoAgeDays: (birth&&prom) ? Math.floor((prom-birth)/86400000) : Infinity
     };
   });
 }
 
-/* ====== 並び替え ====== */
+/* ===== 段位系の標準並び（元仕様に復元） =====
+   昇順：
+   1) 状態（現役優先）
+   2) 現役内で titleRank 昇順（1が最上位、空=Infinity=末尾）
+   3) 段位は「九→四」（rankOrderMapは9>4だが比較を逆にする）
+   4) 現在段位の到達日（早いほうが上）
+   5) 棋士番号
+*/
 function sortByDan(list, order='asc'){
   const asc = (order==='asc');
   return [...list].sort((a,b)=>{
-    const aS = stateOrderAsc[a.status] ?? 99;
-    const bS = stateOrderAsc[b.status] ?? 99;
-    if (aS !== bS) return asc ? aS - bS : bS - aS;
+    // 1) 状態
+    const as = stateOrderAsc[a.status] ?? 99;
+    const bs = stateOrderAsc[b.status] ?? 99;
+    if (as !== bs) return asc ? as - bs : bs - as;
 
-    const aR = rankOrderMap[a.dan] ?? -Infinity;
-    const bR = rankOrderMap[b.dan] ?? -Infinity;
-    if (aR !== bR) return asc ? aR - bR : bR - aR;
+    // 2) 現役内はタイトル保持者優先（1が最上位、空はInfinity）
+    if (a.status === '現役' && b.status === '現役') {
+      const at = a.titleRank ? Number(a.titleRank) : Infinity;
+      const bt = b.titleRank ? Number(b.titleRank) : Infinity;
+      if (at !== bt) return asc ? at - bt : bt - at;
 
-    const ad = getDanPromotionDate(a);
-    const bd = getDanPromotionDate(b);
-    const av = ad ? ad.getTime() : Infinity;
-    const bv = bd ? bd.getTime() : Infinity;
-    if (av !== bv) return asc ? av - bv : bv - av;
+      // 3) 段位（昇順=九→四）。rankOrderMapは数が大きいほど高段位なので比較を逆に
+      const ar = rankOrderMap[a.dan] ?? 0;
+      const br = rankOrderMap[b.dan] ?? 0;
+      if (ar !== br) return asc ? br - ar : ar - br;
 
+      // 4) 現段位の到達日（早い=小さいほど上）
+      const ad = getDanPromotionDate(a);
+      const bd = getDanPromotionDate(b);
+      const av = ad ? ad.getTime() : Infinity;
+      const bv = bd ? bd.getTime() : Infinity;
+      if (av !== bv) return asc ? av - bv : bv - av;
+
+      // 5) 棋士番号
+      return asc ? a.noNum - b.noNum : b.noNum - a.noNum;
+    }
+
+    // 現役以外（引退・物故・退会）は棋士番号で並べる
     return asc ? a.noNum - b.noNum : b.noNum - a.noNum;
   });
 }
 
-/* ====== 表描画 ====== */
+/* ===== 表描画 ===== */
 function renderInitialTable(data){
   const thead = document.getElementById('thead-row');
   thead.innerHTML = `
@@ -219,7 +241,7 @@ function renderSortedTable(data, criterion){
   }).join('');
 }
 
-/* ====== カード描画・サマリ・表示切替 ====== */
+/* ===== カード描画・サマリ・表示切替 ===== */
 function renderCards(data, criterion) {
   const wrap = document.getElementById('card-container');
   if (!data || data.length === 0) {
@@ -279,7 +301,7 @@ function setViewMode(mode) {
   }
 }
 
-/* ====== 初期表示＆操作 ====== */
+/* ===== 初期表示＆操作 ===== */
 function getFilteredPeople(){
   return document.getElementById('m-activeOnly').checked
     ? people.filter(p=>p.status==='現役')
@@ -329,11 +351,11 @@ function applyMobileSort(){
   }
 
   if (currentView === 'card') {
-    renderCards(sorted, criterion);
+    renderCards(sorted, criterion || 'dan');
   } else {
-    renderSortedTable(sorted, criterion);
+    renderSortedTable(sorted, criterion || 'dan');
   }
-  updateStatusSummary(sorted, criterion);
+  updateStatusSummary(sorted, criterion || 'dan');
 }
 
 (async()=>{
