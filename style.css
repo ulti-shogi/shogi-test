@@ -128,3 +128,90 @@ function renderCards(data, criterion) {
     `;
   }).join('');
 }
+
+            /* ===== カード表示（スマホ最適） ===== */
+
+/* カードの並び：スマホ1列、少し広い端末は2列 */
+.cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+@media (min-width: 480px) {
+  .cards { grid-template-columns: 1fr 1fr; }
+}
+
+/* 1枚のカードの見た目 */
+.card {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 12px 12px 10px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+}
+
+/* カード上部：名前＋段位バッジ＋現役ピル */
+.card-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.card-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.badge-dan {
+  font-size: 0.85rem;
+  background: #f3f4f6;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+.pill-status {
+  margin-left: auto;
+  font-size: 0.8rem;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: #eef7ee;
+  color: #1f7a1f;   /* 現役 */
+}
+.pill-status.retired {
+  background: #f7f1ee;
+  color: #7a3a1f;   /* 引退など */
+}
+
+/* 本文エリア */
+.card-body {
+  display: grid;
+  gap: 4px;
+  font-size: 0.92rem;
+  color: #333;
+}
+.card-meta {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+/* ヒット0件の表示 */
+.empty-state {
+  padding: 16px;
+  text-align: center;
+  color: #666;
+  border: 1px dashed #ddd;
+  border-radius: 10px;
+  background: #fafafa;
+}
+
+/* （任意）上のコントロールバーを固定したい場合 */
+.controls {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #fff;
+  padding: 8px 10px;
+  border-bottom: 1px solid #eee;
+}
+.status-summary { margin-top: 4px; font-size: .9rem; color: #555; }
+.view-toggle { display:flex; gap:12px; align-items:center; margin:6px 0; font-size:.95rem; }
