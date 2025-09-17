@@ -11,7 +11,7 @@
 
   <div class="controls">
     <!-- ▼ 追加：フィルタパネルのトグル -->
-    <button type="button" id="toggle-filters">🔍 フィルタ条件</button>
+    <button type="button" id="toggle-filters" aria-expanded="false" aria-controls="filter-panel">🔍 フィルタ条件</button>
 
     <!-- ▼ 追加：フィルタパネル本体（状態／段位／年齢）。絞り込みUIのみ追加 -->
     <div id="filter-panel" hidden style="grid-column: 1 / -1;">
@@ -25,7 +25,7 @@
 
       <fieldset style="margin-top:.4em;">
         <legend>段位</legend>
-        <!-- ▼ 追加：タイトル保持者 -->
+        <!-- ▼ 追加（最小差分1/2）：タイトル保持者 -->
         <label><input type="checkbox" class="filter-dan" value="タイトル保持者"> タイトル保持者</label>
         <label><input type="checkbox" class="filter-dan" value="九段"> 九段</label>
         <label><input type="checkbox" class="filter-dan" value="八段"> 八段</label>
@@ -303,7 +303,7 @@ function renderCards(data, criterion) {
   }).join('');
 }
 
-/* ===== サマリ表示（既存のまま：選択中フィルタの文言反映） ===== */
+/* ===== サマリ表示（拡張：選択中フィルタの文言反映） ===== */
 function updateStatusSummary(list, criterion) {
   const sum = document.getElementById('status-summary');
   if (!sum) return;
@@ -368,6 +368,7 @@ function getFilteredPeople(){
     if (!checkedStatus.includes(p.status)) return false;
 
     // 段位（未選択＝フィルタ無効）
+    /* ▼ 変更（最小差分2/2）：タイトル保持者の考慮を追加 */
     if (checkedDan.length) {
       const hasTitle = checkedDan.includes('タイトル保持者');
       const isTitleHolder = !!(p.titleRank && p.titleRank !== '');
@@ -396,7 +397,7 @@ function renderMobileInitial(){
   updateStatusSummary(base, 'dan');
 }
 
-/* ===== 検索ボタン：フィルタ＋並び替え一括適用（既存） ===== */
+/* ===== 検索ボタン：フィルタ＋並び替え一括適用 ===== */
 function applyFiltersAndSort(){
   const orderRadio = document.querySelector('input[name="sortOrder"]:checked');
   currentSortOrder = orderRadio ? orderRadio.value : 'asc';
@@ -435,16 +436,33 @@ function applyFiltersAndSort(){
     renderSortedTable(sorted, criterion);
   }
   updateStatusSummary(sorted, criterion);
+
+  // ▼ 検索確定後はフィルタパネルを閉じ、ボタン状態を同期（既存）
+  const panel = document.getElementById('filter-panel');
+  const btn   = document.getElementById('toggle-filters');
+  if (panel && !panel.hidden) {
+    panel.hidden = true;
+    btn?.classList.remove('active');
+    btn?.setAttribute('aria-expanded', 'false');
+    btn?.blur();
+  }
+  // 任意：結果サマリーへスクロール
+  document.getElementById('status-summary')?.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
-/* ===== 起動時の初期化（既存） ===== */
+/* ===== 起動時の初期化（既存＋最低限の追加） ===== */
 (async()=>{
   await loadData();
 
-  // フィルタパネル開閉（既存のまま）
-  document.getElementById('toggle-filters')?.addEventListener('click', ()=>{
+  // フィルタパネル開閉（置換：開閉状態に合わせて active/aria を同期）
+  const toggleBtn = document.getElementById('toggle-filters');
+  toggleBtn?.addEventListener('click', ()=>{
     const p = document.getElementById('filter-panel');
-    if (p) p.hidden = !p.hidden;
+    if (!p) return;
+    const willOpen = p.hidden;   // これから開くか？
+    p.hidden = !p.hidden;        // 表示切り替え
+    toggleBtn.classList.toggle('active', willOpen);
+    toggleBtn.setAttribute('aria-expanded', String(willOpen));
   });
 
   // リセット：現役のみON／段位全OFF／年齢未指定
