@@ -2,86 +2,98 @@
 <html lang="ja">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>兵庫県 白地図（神戸市だけ赤・スタイル剥がし版）</title>
-
-<body style="font-family: system-ui, sans-serif; margin: 16px;">
+<title>兵庫県 白地図（神戸市だけ赤・GitHub Pages用確実版）</title>
+<body style="font-family: system-ui, sans-serif; margin:16px;">
   <section style="margin-bottom:12px">
-    <h3 style="margin:0 0 8px;">兵庫県 白地図（SVG）</h3>
-    <p style="margin:0">
-      同じフォルダに <code>hyogo.svg</code>（Wikipediaの兵庫県市区町村SVG）を置いてください。<br>
-      このページはSVGを文字列として読み込み、内蔵スタイルを削除してから描画します。
-    </p>
+    <h3 style="margin:0 0 8px;">兵庫県 白地図（SVGをインライン注入）</h3>
+    <p style="margin:0">同じフォルダに <code>hyogo.svg</code> を配置してください。</p>
   </section>
 
   <div id="svg-wrap" style="width:100%; max-width:720px; border:1px solid #ddd;"></div>
 
   <script>
-  const obj = document.querySelector('object');
-
-  obj.addEventListener('load', () => {
-    const svgDoc = obj.contentDocument;
-    if (!svgDoc) { console.warn('SVG参照不可'); return; }
-    const svgRoot = svgDoc.documentElement;
-
-    // 0) 内蔵<style>を削除（元の配色を無効化）
-    svgRoot.querySelectorAll('style').forEach(s => s.remove());
-
+  (async () => {
+    const SVG_FILE = 'hyogo.svg';          // 置き場所とファイル名に注意（大文字小文字も）
+    const CITY_CANDIDATES = ['神戸市','Kobe','Kobe-shi']; // 実際の表記に合わせて増やせる
     const BASE = '#eeeeee';
     const RED  = '#ff4d4f';
-    const CITY_CANDIDATES = ['神戸市','Kobe']; // どちらでもOKにする
 
-    // 1) 全面グレー
-    svgRoot.querySelectorAll('path, polygon, rect, circle, ellipse').forEach(el => {
-      el.removeAttribute('fill');
-      if (el.style) el.style.fill = null;
+    // CSS.escape の簡易ポリフィル（古いブラウザ用）
+    if (typeof window.CSS === 'undefined' || typeof CSS.escape !== 'function') {
+      window.CSS = window.CSS || {};
+      CSS.escape = (s) => String(s).replace(/[^a-zA-Z0-9_\u00A0-\uFFFF-]/g, '\\$&');
+    }
+
+    // fetch（GitHub Pages ではOK。ローカル file:// だと失敗します）
+    let resp;
+    try {
+      resp = await fetch(SVG_FILE, { cache: 'no-store' });
+    } catch (e) {
+      console.error('SVGの取得に失敗（ネットワーク）:', e);
+      return;
+    }
+    if (!resp.ok) {
+      console.error('SVGの取得に失敗（HTTP ' + resp.status + '）: パス/ファイル名/大文字小文字を確認', SVG_FILE);
+      return;
+    }
+
+    const text = await resp.text();
+    const wrap = document.getElementById('svg-wrap');
+    wrap.innerHTML = text;               // SVGをインラインで挿入
+    const svg = wrap.querySelector('svg');
+    if (!svg) { console.error('SVGタグが見つかりません'); return; }
+
+    // 0) 内蔵<style>を削除（元の配色を強制リセット）
+    svg.querySelectorAll('style').forEach(s => s.remove());
+
+    // 1) 全図形の fill をグレーに統一（属性/inline両対応）
+    const shapes = svg.querySelectorAll('path, polygon, rect, circle, ellipse');
+    shapes.forEach(el => {
+      if (el.style && el.style.fill) el.style.fill = null;
+      if (el.hasAttribute && el.hasAttribute('fill')) el.removeAttribute('fill');
       el.setAttribute('fill', BASE);
     });
 
-    // 2) 神戸市を探す（id / data-name / aria-label / <title>）
+    // 2) 神戸市を特定（id / data-name / aria-label / <title>）
     const found = new Set();
     for (const name of CITY_CANDIDATES) {
-      // id / data-name / aria-label
       const esc = CSS.escape(name);
-      svgRoot.querySelectorAll(`#${esc}, [data-name="${name}"], [aria-label="${name}"]`)
-             .forEach(el => found.add(el));
-
-      // <title>神戸市</title> or <title>Kobe</title>
-      svgRoot.querySelectorAll('g, path, polygon, rect, circle, ellipse').forEach(el => {
-        const t = el.querySelector('title');
+      svg.querySelectorAll(`#${esc}, [data-name="${name}"], [aria-label="${name}"]`)
+         .forEach(el => found.add(el));
+      svg.querySelectorAll('g, path, polygon, rect, circle, ellipse').forEach(el => {
+        const t = el.querySelector && el.querySelector('title');
         if (!t) return;
         const txt = (t.textContent || '').trim();
-        if (txt === name) found.add(el);
-        // 部分一致（例：'神戸市中央区' など）も一応拾う
-        if (txt.includes(name)) found.add(el);
+        if (txt === name || txt.includes(name)) found.add(el); // 部分一致も拾う
       });
     }
 
-    // g要素なら中の図形へ展開
-    const targets = new Set();
     if (found.size === 0) {
-      // デバッグ：<title>一覧を一部出力してヒント表示
-      const titles = [];
-      svgRoot.querySelectorAll('title').forEach(t => titles.push(t.textContent.trim()));
-      console.warn('神戸市を特定できず。例：', titles.slice(0, 20));
+      // ヒント：実際のタイトル候補をログに出す
+      const sample = [];
+      svg.querySelectorAll('title').forEach(t => { const s = t.textContent.trim(); if (s) sample.push(s); });
+      console.warn('神戸市が特定できません。タイトル例:', sample.slice(0, 30));
       return;
     }
+
+    // g の場合は中身の図形に展開
+    const targets = new Set();
     found.forEach(el => {
-      if (el.tagName.toLowerCase() === 'g') {
+      if (el.tagName && el.tagName.toLowerCase() === 'g') {
         el.querySelectorAll('path, polygon, rect, circle, ellipse').forEach(p => targets.add(p));
       } else {
         targets.add(el);
       }
     });
 
-    // 3) 神戸市だけ赤（!important で最優先）
+    // 3) 神戸市だけ赤で最優先上書き
     targets.forEach(el => {
-      el.removeAttribute('fill');
       if (el.style) el.style.setProperty('fill', RED, 'important');
       el.setAttribute('fill', RED);
     });
 
-    console.log('神戸市として着色した要素数:', targets.size);
-  });
-</script>
+    console.log('神戸市として着色した図形数:', targets.size);
+  })();
+  </script>
 </body>
 </html>
