@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>兵庫県 白地図（神戸市だけ赤・スタイル剥がし版）</title>
+
+<body style="font-family: system-ui, sans-serif; margin: 16px;">
+  <section style="margin-bottom:12px">
+    <h3 style="margin:0 0 8px;">兵庫県 白地図（SVG）</h3>
+    <p style="margin:0">
+      同じフォルダに <code>hyogo.svg</code>（Wikipediaの兵庫県市区町村SVG）を置いてください。<br>
+      このページはSVGを文字列として読み込み、内蔵スタイルを削除してから描画します。
+    </p>
+  </section>
+
+  <div id="svg-wrap" style="width:100%; max-width:720px; border:1px solid #ddd;"></div>
+
+  <script>
+    // ▼ 設定
+    const SVG_PATH = 'hyogo.svg';        // 読み込むSVGファイル
+    const CITY_NAME_JA = '神戸市';       // 着色したい市区町村名
+    const BASE_FILL = '#eeeeee';         // 全体の基準色
+    const HIGHLIGHT_FILL = '#ff4d4f';    // 強調色（赤）
+
+    // ▼ ユーティリティ：要素から fill を剥がす（属性と inline style の両方に対応）
+    function stripFill(el) {
+      // style 属性の fill を消す（他プロパティは温存）
+      if (el.style && el.style.fill) el.style.fill = null;
+      // 属性の fill を消す
+      if (el.hasAttribute && el.hasAttribute('fill')) el.removeAttribute('fill');
+    }
+
+    // ▼ ユーティリティ：対象SVG内の全図形をグレー化
+    function grayOutAll(svgRoot) {
+      const nodes = svgRoot.querySelectorAll('path, polygon, rect, circle, ellipse');
+      nodes.forEach(el => {
+        stripFill(el);
+        // 直接グレーを指定（後勝ちにするため最後に設定）
+        el.setAttribute('fill', BASE_FILL);
+      });
+    }
+
+    // ▼ 「神戸市」要素候補をできるだけ網羅的に拾う
+    function findCityElements(svgRoot, cityNameJa) {
+      const found = new Set();
+
+      // 1) id / data-name / aria-label で一致
+      const direct =
+        svgRoot.querySelector(`#${CSS.escape(cityNameJa)}`) ||
+        svgRoot.querySelector(`[data-name="${cityNameJa}"]`) ||
+        svgRoot.querySelector(`[aria-label="${cityNameJa}"]`);
+      if (direct) found.add(direct);
+
+      // 2) <title>神戸市</title> を子に持つ要素（Wikimedia系で多い）
+      svgRoot.querySelectorAll('g, path, polygon, rect, circle, ellipse').forEach(el => {
+        const t = el.querySelector('title');
+        if (t && t.textContent.trim() === cityNameJa) found.add(el);
+      });
+
+      // 3) グループ（g）の場合は中のパスを展開
+      const expanded = new Set();
+      found.forEach(el => {
+        if (el.tagName.toLowerCase() === 'g') {
+          el.querySelectorAll('path, polygon, rect, circle, ellipse').forEach(p => expanded.add(p));
+        } else {
+          expanded.add(el);
+        }
+      });
+
+      return Array.from(expanded);
+    }
+
+    // ▼ メイン：SVGを fetch → DOM化 → スタイル剥がし → 着色
+    async function loadAndRender() {
+      try {
+        const resp = await fetch(SVG_PATH);
+        const svgText = await resp.text();
+
+        // 文字列→DOM（SVGをそのまま差し込む）
+        const wrap = document.getElementById('svg-wrap');
+        wrap.innerHTML = svgText;
+
+        // 直下の <svg> を取得
+        const svgEl = wrap.querySelector('svg');
+        if (!svgEl) {
+          console.warn('SVGタグが見つかりませんでした。');
+          return;
+        }
+
+        // 0) 内蔵 <style> を全削除（元色や !important を無力化）
+        svgEl.querySelectorAll('style').forEach(s => s.remove());
+
+        // 1) すべてをグレー化
+        grayOutAll(svgEl);
+
+        // 2) 神戸市だけ赤
+        const kobeEls = findCityElements(svgEl, CITY_NAME_JA);
+        if (kobeEls.length === 0) {
+          console.warn('「神戸市」を特定できませんでした。SVG内のID/ラベルをご確認ください。');
+          return;
+        }
+        kobeEls.forEach(el => {
+          stripFill(el); // 念のため一旦剥がす
+          // inline style のほうでも上書き
+          if (el.style) el.style.setProperty('fill', HIGHLIGHT_FILL, 'important');
+          el.setAttribute('fill', HIGHLIGHT_FILL);
+        });
+
+      } catch (e) {
+        console.error('SVGの読み込みに失敗しました:', e);
+      }
+    }
+
+    loadAndRender();
+  </script>
+</body>
+</html>

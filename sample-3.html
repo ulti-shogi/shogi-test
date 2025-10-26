@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>兵庫県白地図：神戸市を赤く表示するデモ</title>
+
+<body style="font-family: system-ui, sans-serif; margin: 16px;">
+  <h3>兵庫県 白地図（神戸市を赤く表示）</h3>
+  <p>将来的にはCSVの市区町村列を読み込んで自動で塗り分けますが、今は神戸市を固定で赤く塗ります。</p>
+
+  <!-- ▼ 簡易版兵庫県地図（神戸市・姫路市・明石市のみの構造例） -->
+  <svg id="hyogoMap" viewBox="0 0 400 200" width="100%" style="border:1px solid #ccc;">
+    <rect x="0" y="0" width="400" height="200" fill="#ffffff"/>
+
+    <!-- 市区町村パス（ここでは仮の四角形） -->
+    <g id="cities" fill="#eeeeee" stroke="#999" stroke-width="1">
+      <rect id="神戸市"   x="70"  y="90" width="70" height="50" rx="4" ry="4" />
+      <rect id="姫路市"   x="160" y="60" width="80" height="50" rx="4" ry="4" />
+      <rect id="明石市"   x="260" y="100" width="60" height="40" rx="4" ry="4" />
+    </g>
+
+    <!-- ラベル -->
+    <g font-size="12" fill="#333">
+      <text x="105" y="120" text-anchor="middle">神戸市</text>
+      <text x="200" y="90"  text-anchor="middle">姫路市</text>
+      <text x="290" y="125" text-anchor="middle">明石市</text>
+    </g>
+  </svg>
+
+  <script>
+    // ▼ 神戸市だけを赤く塗る
+    const svg = document.getElementById('hyogoMap');
+
+    function resetFill() {
+      svg.querySelectorAll('#cities > *').forEach(el => el.setAttribute('fill', '#eeeeee'));
+    }
+
+    function highlight(cityName) {
+      const el = document.getElementById(cityName);
+      if (!el) return;
+      el.setAttribute('fill', '#ff4d4f');
+    }
+
+    // 初期表示：神戸市を赤に
+    resetFill();
+    highlight('神戸市');
+  </script>
+</body>
+</html>
