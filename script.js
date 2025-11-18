@@ -1,4 +1,4 @@
-// pokemon-candy-2025-11-19-a
+// pokemon-candy-2025-11-19-b
 
 // CSVデータ格納用
 let pokeData = [];         // {name, growth}
@@ -239,7 +239,7 @@ function handleCalc() {
   const candies = calcCandies(needExp);
 
   // 結果表示
-  resultName.textContent = name;
+  resultName.textContent = `${name}（Lv.${curLv}）`;
   resultGrowth.textContent = growthType;
 
   // ここを追加：現在・目標・必要の3つを出す
