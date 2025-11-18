@@ -1,258 +1,90 @@
-/* ====== ベース ====== */
-:root {
-  --max-width: 980px;
-}
-body {
-  font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", "Noto Sans JP", sans-serif;
-  margin: 20px;
-}
-.wrapper {
-  max-width: var(--max-width);
-  margin: 0 auto;
-}
-h1 { font-size: 1.25rem; margin: 0 0 12px; }
-.section-title { font-weight: 600; margin: 16px 0 8px; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      padding: 12px;
+      max-width: 480px;
+      margin: 0 auto;
+      background: #f5f5f5;
+    }
+    h1 {
+      font-size: 1.2rem;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      margin-bottom: 12px;
+    }
+    label {
+      display: block;
+      font-size: 0.9rem;
+      margin-top: 8px;
+      margin-bottom: 4px;
+    }
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 12px;
+      border: none;
+      border-radius: 4px;
+      background: #ffcc00;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    button:disabled {
+      background: #ddd;
+      cursor: not-allowed;
+    }
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 4px 0;
+      font-size: 0.95rem;
+    }
+    .result-row span.label {
+      color: #555;
+    }
+    .result-row span.value {
+      font-weight: bold;
+    }
+    .candies {
+      margin-top: 8px;
+    }
+    .candies div {
+      font-size: 0.95rem;
+    }
+    .note {
+      font-size: 0.75rem;
+      color: #777;
+      margin-top: 4px;
+    }
+    .error {
+      color: #c00;
+      font-size: 0.85rem;
+      margin-top: 6px;
+    }
 
-/* 共通テーブル */
-table { border-collapse: collapse; width: 100%; }
-th, td { border: 1px solid #ddd; padding: 8px 10px; text-align: left; }
-th { background: #f7f7f7; }
-
-/* コントロール（スマホで触りやすく） */
-.controls {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
-  align-items: center;
-  margin: 8px 0 12px;
-}
-.controls .order {
-  display: flex; gap: 10px; align-items: center; justify-content: flex-start;
-  grid-column: 1 / -1;
-}
-select, button {
-  padding: 10px 12px;
-  font-size: 16px;
-}
-button { border: 1px solid #ccc; background: #fff; border-radius: 8px; }
-
-/* ====== レイアウト切替 ====== */
-/* PC（幅800px以上）: PCビュー表示、モバイルビュー非表示 */
-@media (min-width: 800px) {
-  #pc-view   { display: block; }
-  #mobile-view { display: none; }
-}
-
-/* スマホ（幅799px以下）: モバイルビュー表示、PCビュー非表示 */
-@media (max-width: 799px) {
-  #pc-view   { display: none; }
-  #mobile-view { display: block; }
-
-  /* モバイル向け少し文字詰め */
-  th, td { padding: 8px; }
-  table { font-size: 15px; }
-}
-
-/* PCテーブル：ソート可能ヘッダと矢印 */
-th.pc-sort { cursor: pointer; position: relative; }
-th .pc-arrow { position: absolute; right: 8px; font-size: 0.8em; }
-
-/* 順位列をコンパクトに中央寄せ */
-td.rank, th:nth-child(1) {
-  text-align: center;
-  white-space: nowrap;
-}
-
-tbody tr:nth-child(odd) {
-  background-color: #f9f9f9;
-}
-
-#mobile-container button.active {
-  background-color: #007bff;
-  color: white;
-}
-
-/* ▼ ソート矢印を表示するスタイル */
-th.sortable {
-  cursor: pointer;
-  position: relative;
-  padding-right: 1.2em; /* 矢印のスペース確保 */
-}
-
-th.sorted-asc::after,
-th.sorted-desc::after {
-  position: absolute;
-  right: 0.3em;
-  font-size: 0.8em;
-}
-
-th.sorted-asc::after {
-  content: "▲";
-}
-
-th.sorted-desc::after {
-  content: "▼";
-}
-            /* ===== カード表示（スマホ最適） ===== */
-
-/* カードの並び：スマホ1列、少し広い端末は2列 */
-.cards {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-  margin-top: 12px;
-}
-@media (min-width: 480px) {
-  .cards { grid-template-columns: 1fr 1fr; }
-}
-
-/* 1枚のカードの見た目 */
-.card {
-  background: #fff;
-  border: 1px solid #eee;
-  border-radius: 12px;
-  padding: 12px 12px 10px;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
-}
-
-/* カード上部：名前＋段位バッジ＋現役ピル */
-.card-header {
+.mode-row {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-.card-name {
-  font-weight: 700;
-  font-size: 1.05rem;
-}
-.badge-dan {
-  font-size: 0.85rem;
-  background: #f3f4f6;
-  padding: 2px 8px;
-  border-radius: 9999px;
-  white-space: nowrap;
-}
-.pill-status {
-  margin-left: auto;
-  font-size: 0.8rem;
-  padding: 2px 8px;
-  border-radius: 9999px;
-  background: #eef7ee;
-  color: #1f7a1f;   /* 現役 */
-}
-.pill-status.retired {
-  background: #f7f1ee;
-  color: #7a3a1f;   /* 引退など */
+  gap: 12px;
+  margin-top: 8px;
+  font-size: 0.9rem;
 }
 
-/* 本文エリア */
-.card-body {
-  display: grid;
+.mode-row label {
+  display: flex;
+  align-items: center;
   gap: 4px;
-  font-size: 0.92rem;
-  color: #333;
-}
-.card-meta {
-  font-size: 0.85rem;
-  color: #666;
-}
-
-/* ヒット0件の表示 */
-.empty-state {
-  padding: 16px;
-  text-align: center;
-  color: #666;
-  border: 1px dashed #ddd;
-  border-radius: 10px;
-  background: #fafafa;
-}
-
-/* （任意）上のコントロールバーを固定したい場合 */
-.controls {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: #fff;
-  padding: 8px 10px;
-  border-bottom: 1px solid #eee;
-}
-.status-summary { margin-top: 4px; font-size: .9rem; color: #555; }
-.view-toggle { display:flex; gap:12px; align-items:center; margin:6px 0; font-size:.95rem; }
-
-/* controls グリッド内のアイテムを縦方向に引き伸ばさない */
-.controls {
-  align-items: start; /* ← stretchを解除して内容の高さで揃える */
-}
-
-/* フィルタ条件ボタンを横長一行＆中央寄せに */
-#toggle-filters {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.3em;
-  white-space: nowrap;
-  padding: 0.4em 0.8em;
-  height: auto; /* 余計な高さ指定を無効化 */
-}
-/* フィルタ条件ボタンを横長一行に固定（改行防止はそのまま） */
-#toggle-filters{
-  white-space: nowrap;
-  grid-column: 1 / -1;      /* ← ここでグリッド1行を占有させる */
-  justify-self: start;
-}
-
-/* サマリは1行で左寄せ・全幅に（右カラムに吸い込まれないように） */
-#status-summary{
-  grid-column: 1 / -1;      /* ← サマリも1行使って左から配置 */
-  justify-self: start;
-}
-
-/* （任意）表示モードのラベルの改行を防止してレイアウトのガタつきを抑える */
-.view-toggle label{
-  white-space: nowrap;
-}
-/* フィルタパネルを必ず左寄せにする（右寄り問題の解消） */
-#filter-panel {
-  display: block !important;     /* gridやflex指定を解除 */
-  text-align: left !important;   /* 中身を左揃え */
-}
-
-#filter-panel fieldset {
-  display: block !important;     /* 横並び指定を解除 */
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-}
-
-#filter-panel label {
-  display: inline-flex !important; /* チェックボックスと文字を横並び */
-  align-items: center;
-  margin-right: 0.8em;
-}
-/* --- 右寄り&出っぱなし対策（style-right.css の最後に追記）--- */
-
-/* 1) hidden 属性を最優先にして、常時表示を止める */
-#filter-panel[hidden] { 
-  display: none !important; 
-}
-
-/* 2) フィルタ項目を左から並べる（右寄りの根を断つ） */
-#filter-panel { 
-  text-align: left !important; 
-}
-
-#filter-panel fieldset { 
-  display: flex !important;         /* 行内の並びをこちらで制御 */
-  flex-wrap: wrap !important;       /* 狭い幅でも左から折り返す */
-  justify-content: flex-start !important; 
-  align-items: flex-start !important;
-  margin: 0 0 .5em 0 !important;
-  padding: 0 !important;
-}
-
-#filter-panel label { 
-  display: inline-flex !important;  /* □ とテキストを横並び */
-  align-items: center !important;
-  margin-right: .8em !important;    /* 均等な間隔だけ付ける */
-  margin-left: 0 !important;
 }

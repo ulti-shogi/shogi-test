@@ -1,88 +1,11 @@
 <!DOCTYPE html>
+<!-- pokemon-candy-2025-11-18-a -->
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <title>ポケモン経験値計算（けいけんアメ版）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      padding: 12px;
-      max-width: 480px;
-      margin: 0 auto;
-      background: #f5f5f5;
-    }
-    h1 {
-      font-size: 1.2rem;
-      margin-bottom: 12px;
-      text-align: center;
-    }
-    .card {
-      background: #ffffff;
-      border-radius: 8px;
-      padding: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      margin-bottom: 12px;
-    }
-    label {
-      display: block;
-      font-size: 0.9rem;
-      margin-top: 8px;
-      margin-bottom: 4px;
-    }
-    input[type="text"],
-    input[type="number"] {
-      width: 100%;
-      padding: 8px;
-      box-sizing: border-box;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-      font-size: 1rem;
-    }
-    button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 12px;
-      border: none;
-      border-radius: 4px;
-      background: #ffcc00;
-      font-weight: bold;
-      font-size: 1rem;
-      cursor: pointer;
-    }
-    button:disabled {
-      background: #ddd;
-      cursor: not-allowed;
-    }
-    .result-row {
-      display: flex;
-      justify-content: space-between;
-      margin: 4px 0;
-      font-size: 0.95rem;
-    }
-    .result-row span.label {
-      color: #555;
-    }
-    .result-row span.value {
-      font-weight: bold;
-    }
-    .candies {
-      margin-top: 8px;
-    }
-    .candies div {
-      font-size: 0.95rem;
-    }
-    .note {
-      font-size: 0.75rem;
-      color: #777;
-      margin-top: 4px;
-    }
-    .error {
-      color: #c00;
-      font-size: 0.85rem;
-      margin-top: 6px;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css?v=20251118-1">
 </head>
 <body>
   <h1>ポケモン経験値計算（けいけんアメ）</h1>
@@ -92,8 +15,29 @@
     <input id="pokemonName" type="text" list="pokemonList" placeholder="例：フシギダネ">
     <datalist id="pokemonList"></datalist>
 
-    <label for="currentLevel">現在のレベル</label>
-    <input id="currentLevel" type="number" min="1" max="100" value="1">
+    <!-- 入力モード切り替え -->
+    <div class="mode-row">
+      <label>
+        <input type="radio" name="inputMode" value="level" checked>
+        レベルで入力
+      </label>
+      <label>
+        <input type="radio" name="inputMode" value="exp">
+        経験値で入力
+      </label>
+    </div>
+
+    <!-- レベル入力グループ -->
+    <div id="levelInputGroup">
+      <label for="currentLevel">現在のレベル</label>
+      <input id="currentLevel" type="number" min="1" max="100" value="1">
+    </div>
+
+    <!-- 経験値入力グループ -->
+    <div id="expInputGroup" style="display:none;">
+      <label for="currentExp">現在の経験値</label>
+      <input id="currentExp" type="number" min="0" step="1" placeholder="例：8012">
+    </div>
 
     <label for="targetLevel">上げたいレベル</label>
     <input id="targetLevel" type="number" min="1" max="100" value="50">
@@ -124,211 +68,6 @@
       </div>
     </div>
   </div>
-
-  <script>
-    // CSVデータ格納用
-    let pokeData = [];         // {name, growth}
-    let growthExpTable = {};   // growthType => {level: totalExp}
-    let candyList = [];        // [{name, xp}, ...]
-
-    const pokemonInput = document.getElementById('pokemonName');
-    const currentLevelInput = document.getElementById('currentLevel');
-    const targetLevelInput = document.getElementById('targetLevel');
-    const calcBtn = document.getElementById('calcBtn');
-    const errorDiv = document.getElementById('error');
-
-    const resultCard = document.getElementById('resultCard');
-    const resultName = document.getElementById('resultName');
-    const resultGrowth = document.getElementById('resultGrowth');
-    const resultNeedExp = document.getElementById('resultNeedExp');
-    const resultCandies = document.getElementById('resultCandies');
-
-    // --- CSVパーサ（超シンプル版：カンマ区切り前提）---
-    function parseCsv(text) {
-      const lines = text.trim().split(/\r?\n/);
-      const header = lines[0].split(',');
-      const rows = lines.slice(1).map(line => {
-        const cols = line.split(',');
-        const obj = {};
-        header.forEach((h, i) => {
-          obj[h.trim()] = (cols[i] || '').trim();
-        });
-        return obj;
-      });
-      return { header, rows };
-    }
-
-    // --- データ読み込み ---
-    async function loadData() {
-      try {
-        const [pokeText, tableText, candyText] = await Promise.all([
-          fetch('poke.csv').then(r => r.text()),
-          fetch('table.csv').then(r => r.text()),
-          fetch('candy.csv').then(r => r.text())
-        ]);
-
-        // けいけんアメ
-        const candyCsv = parseCsv(candyText);
-        candyList = candyCsv.rows.map(r => ({
-          name: r['けいけんアメ'],
-          xp: Number(r['経験値'])
-        })).filter(c => !Number.isNaN(c.xp));
-        // 大きい経験値順にソート
-        candyList.sort((a, b) => b.xp - a.xp);
-
-        // ポケモン & 経験値タイプ
-        const pokeCsv = parseCsv(pokeText);
-        pokeData = pokeCsv.rows.map(r => ({
-          name: r['ポケモン'],
-          growth: r['経験値タイプ']
-        }));
-
-        // datalist にポケモン名をセット
-        const datalist = document.getElementById('pokemonList');
-        pokeData.forEach(p => {
-          const option = document.createElement('option');
-          option.value = p.name;
-          datalist.appendChild(option);
-        });
-
-        // 経験値テーブル
-        const tableCsv = parseCsv(tableText);
-        const headers = tableCsv.header;  // ['レベル', '60万タイプ', '80万タイプ', ...]
-        tableCsv.rows.forEach(row => {
-          const level = Number(row['レベル']);
-          if (Number.isNaN(level)) return;
-          headers.forEach(h => {
-            if (h === 'レベル') return;
-            const gx = row[h].trim();
-            const exp = gx === '' ? NaN : Number(gx);
-            if (!growthExpTable[h]) {
-              growthExpTable[h] = {};
-            }
-            if (!Number.isNaN(exp)) {
-              growthExpTable[h][level] = exp;
-            }
-          });
-        });
-
-        // ボタンを有効化
-        calcBtn.disabled = false;
-
-      } catch (e) {
-        console.error(e);
-        errorDiv.textContent = 'CSVファイルの読み込みに失敗しました。ファイル名や配置場所を確認してください。';
-      }
-    }
-
-    // --- ユーティリティ ---
-    function findPokemonByName(name) {
-      return pokeData.find(p => p.name === name);
-    }
-
-    function getTotalExp(growthType, level) {
-      const table = growthExpTable[growthType];
-      if (!table) return null;
-      return table[level] ?? null;
-    }
-
-    // 必要経験値を満たすけいけんアメの簡易計算
-    function calcCandies(needExp) {
-      if (needExp <= 0) return { total: 0, detail: [] };
-
-      let remaining = needExp;
-      const result = [];
-
-      // 大きいアメから順番に使う（不足にならないよう、最後にXSで調整）
-      candyList.forEach(c => {
-        const count = Math.floor(remaining / c.xp);
-        if (count > 0) {
-          result.push({ name: c.name, xp: c.xp, count });
-          remaining -= c.xp * count;
-        }
-      });
-
-      // もしまだ残っているなら、最小のアメ（おそらくXS）を1個追加して不足を防ぐ
-      if (remaining > 0 && candyList.length > 0) {
-        const smallest = candyList[candyList.length - 1];
-        result.push({ name: smallest.name, xp: smallest.xp, count: 1 });
-        remaining = 0;
-      }
-
-      const totalExp = result.reduce((sum, c) => sum + c.xp * c.count, 0);
-      return { total: totalExp, detail: result };
-    }
-
-    // --- メイン計算 ---
-    function handleCalc() {
-      errorDiv.textContent = '';
-      resultCard.style.display = 'none';
-
-      const name = pokemonInput.value.trim();
-      const curLv = Number(currentLevelInput.value);
-      const tgtLv = Number(targetLevelInput.value);
-
-      if (!name) {
-        errorDiv.textContent = 'ポケモン名を入力してください。';
-        return;
-      }
-      if (!Number.isInteger(curLv) || !Number.isInteger(tgtLv)) {
-        errorDiv.textContent = 'レベルは整数で入力してください。';
-        return;
-      }
-      if (curLv < 1 || curLv > 100 || tgtLv < 1 || tgtLv > 100) {
-        errorDiv.textContent = 'レベルは1〜100の範囲で入力してください。';
-        return;
-      }
-      if (tgtLv <= curLv) {
-        errorDiv.textContent = '上げたいレベルは現在のレベルより高くしてください。';
-        return;
-      }
-
-      const p = findPokemonByName(name);
-      if (!p) {
-        errorDiv.textContent = 'そのポケモンはデータベースに見つかりません。名前の表記を確認してください。';
-        return;
-      }
-
-      const growthType = p.growth;
-      const curExp = getTotalExp(growthType, curLv);
-      const tgtExp = getTotalExp(growthType, tgtLv);
-
-      if (curExp == null || tgtExp == null) {
-        errorDiv.textContent = '経験値テーブルに不足があります。このポケモンのレベルデータを確認してください。';
-        return;
-      }
-
-      const needExp = tgtExp - curExp;
-      if (needExp <= 0) {
-        errorDiv.textContent = '必要経験値が0以下になっています。入力を見直してください。';
-        return;
-      }
-
-      const candies = calcCandies(needExp);
-
-      // 結果表示
-      resultName.textContent = name;
-      resultGrowth.textContent = growthType;
-      resultNeedExp.textContent = `${needExp.toLocaleString()} EXP`;
-
-      if (candies.detail.length === 0) {
-        resultCandies.textContent = 'けいけんアメは不要です。';
-      } else {
-        const lines = candies.detail.map(c => {
-          return `アメ${c.name} × ${c.count}（合計 ${ (c.xp * c.count).toLocaleString() } EXP）`;
-        });
-        const totalStr = `合計 ${candies.total.toLocaleString()} EXP`;
-        resultCandies.innerHTML = lines.join('<br>') + '<br><strong>' + totalStr + '</strong>';
-      }
-
-      resultCard.style.display = 'block';
-    }
-
-    // イベント設定
-    calcBtn.addEventListener('click', handleCalc);
-
-    // 初期化
-    loadData();
-  </script>
+<script src="script.js?v=20251118-a"></script>
 </body>
 </html>
