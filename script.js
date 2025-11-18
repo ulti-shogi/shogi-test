@@ -1,4 +1,4 @@
-// pokemon-candy-2025-11-18-b
+// pokemon-candy-2025-11-19-a
 
 // CSVデータ格納用
 let pokeData = [];         // {name, growth}
@@ -14,6 +14,8 @@ const errorDiv = document.getElementById('error');
 const resultCard = document.getElementById('resultCard');
 const resultName = document.getElementById('resultName');
 const resultGrowth = document.getElementById('resultGrowth');
+const resultCurrentExp = document.getElementById('resultCurrentExp'); // 追加
+const resultTargetExp = document.getElementById('resultTargetExp');   // 追加
 const resultNeedExp = document.getElementById('resultNeedExp');
 const resultCandies = document.getElementById('resultCandies');
 
@@ -239,6 +241,10 @@ function handleCalc() {
   // 結果表示
   resultName.textContent = name;
   resultGrowth.textContent = growthType;
+
+  // ここを追加：現在・目標・必要の3つを出す
+  resultCurrentExp.textContent = `${curExp.toLocaleString()} EXP`;
+  resultTargetExp.textContent = `${tgtExp.toLocaleString()} EXP`;
   resultNeedExp.textContent = `${needExp.toLocaleString()} EXP`;
 
   if (candies.detail.length === 0) {
