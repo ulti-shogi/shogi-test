@@ -1,4 +1,4 @@
-// pokemon-candy-2025-11-19-b
+// pokemon-candy-2025-11-19-c
 
 // CSVデータ格納用
 let pokeData = [];         // {name, growth}
@@ -14,10 +14,12 @@ const errorDiv = document.getElementById('error');
 const resultCard = document.getElementById('resultCard');
 const resultName = document.getElementById('resultName');
 const resultGrowth = document.getElementById('resultGrowth');
-const resultCurrentExp = document.getElementById('resultCurrentExp'); // 追加
-const resultTargetExp = document.getElementById('resultTargetExp');   // 追加
+const resultCurrentExp = document.getElementById('resultCurrentExp'); 
+const resultTargetExp = document.getElementById('resultTargetExp');  
 const resultNeedExp = document.getElementById('resultNeedExp');
 const resultCandies = document.getElementById('resultCandies');
+const growthSelect = document.getElementById('growthTypeSelect');
+const expTableContainer = document.getElementById('expTableContainer');
 
 const modeRadios = document.querySelectorAll('input[name="inputMode"]');
 
@@ -71,24 +73,21 @@ async function loadData() {
 
     // 経験値テーブル
     const tableCsv = parseCsv(tableText);
-    const headers = tableCsv.header;  // ['レベル', '60万タイプ', '80万タイプ', ...]
+    const headers = tableCsv.header;
     tableCsv.rows.forEach(row => {
-      const level = Number(row['レベル']);
-      if (Number.isNaN(level)) return;
-      headers.forEach(h => {
-        if (h === 'レベル') return;
-        const gx = (row[h] || '').trim();
-        // もしまだカンマ付きの数値が紛れていても一応ケア
-        const numStr = gx.replace(/,/g, '');
-        const exp = numStr === '' ? NaN : Number(numStr);
-        if (!growthExpTable[h]) {
-          growthExpTable[h] = {};
-        }
-        if (!Number.isNaN(exp)) {
-          growthExpTable[h][level] = exp;
-        }
-      });
+      ...
     });
+
+    // セレクトボックスに経験値タイプを追加
+    if (growthSelect) {
+      const types = Object.keys(growthExpTable);
+      types.forEach(type => {
+        const opt = document.createElement('option');
+        opt.value = type;
+        opt.textContent = type;   // 例：100万タイプ、105万タイプなど
+        growthSelect.appendChild(opt);
+      });
+    }
 
     // ボタンを有効化
     calcBtn.disabled = false;
@@ -153,6 +152,31 @@ function calcCandies(needExp) {
 
   const totalExp = result.reduce((sum, c) => sum + c.xp * c.count, 0);
   return { total: totalExp, detail: result };
+}
+
+// 成長タイプの経験値テーブルを表示
+function renderExpTable(growthType) {
+  if (!growthType) {
+    expTableContainer.innerHTML = '';
+    return;
+  }
+
+  const table = growthExpTable[growthType];
+  if (!table) {
+    expTableContainer.innerHTML = 'この経験値タイプのテーブルが見つかりません。';
+    return;
+  }
+
+  let html = '<table class="exp-table"><thead><tr><th>Lv</th><th>累計EXP</th></tr></thead><tbody>';
+
+  for (let lv = 1; lv <= 100; lv++) {
+    const exp = table[lv];
+    if (exp == null) continue;
+    html += `<tr><td>${lv}</td><td>${exp.toLocaleString()}</td></tr>`;
+  }
+
+  html += '</tbody></table>';
+  expTableContainer.innerHTML = html;
 }
 
 // --- メイン計算 ---
@@ -262,6 +286,12 @@ function handleCalc() {
 
 // イベント設定
 calcBtn.addEventListener('click', handleCalc);
+
+if (growthSelect) {
+  growthSelect.addEventListener('change', () => {
+    renderExpTable(growthSelect.value);
+  });
+}
 
 // 初期化
 loadData();

@@ -88,3 +88,33 @@
   align-items: center;
   gap: 4px;
 }
+
+.exp-table-container {
+  margin-top: 8px;
+  max-height: 300px;
+  overflow: auto;
+}
+
+.exp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.exp-table th,
+.exp-table td {
+  border: 1px solid #ccc;
+  padding: 2px 4px;
+}
+
+.exp-table th {
+  text-align: center;
+}
+
+.exp-table td:first-child {
+  text-align: center;  /* Lv列 */
+}
+
+.exp-table td:last-child {
+  text-align: right;   /* 累計EXP列 */
+}

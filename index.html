@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<!-- pokemon-candy-2025-11-19-b -->
+<!-- pokemon-candy-2025-11-19-c -->
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <title>ポケモン経験値計算（けいけんアメ版）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="style.css?v=20251118-1">
+  <link rel="stylesheet" href="style.css?v=20251119-1">
 </head>
 <body>
-  <h1>ポケモン経験値計算（けいけんアメ）</h1>
+  <h1>ポケモン経験値最適化ツール</h1>
 
   <div class="card">
     <label for="pokemonName">ポケモン名</label>
@@ -55,7 +55,7 @@
       <span class="label">経験値タイプ</span>
       <span class="value" id="resultGrowth"></span>
     </div>
-    <!-- ここから追加 -->
+   
     <div class="result-row">
       <span class="label">目標経験値</span>
       <span class="value" id="resultTargetExp"></span>
@@ -64,7 +64,7 @@
       <span class="label">現在経験値</span>
       <span class="value" id="resultCurrentExp"></span>
     </div>
-    <!-- ここまで追加 -->
+    
     <div class="result-row">
       <span class="label">必要経験値</span>
       <span class="value" id="resultNeedExp"></span>
@@ -78,6 +78,22 @@
       </div>
     </div>
   </div>
-<script src="script.js?v=20251119-b"></script>
+
+    <!-- 経験値テーブル -->
+    <div class="card" id="expTableCard">
+    <div class="result-row">
+      <span class="label">経験値タイプ別テーブル</span>
+    </div>
+
+    <label for="growthTypeSelect">経験値タイプを選択</label>
+    <select id="growthTypeSelect">
+      <option value="">選択してください</option>
+      <!-- 中身はJS側で埋める -->
+    </select>
+
+    <div id="expTableContainer" class="exp-table-container"></div>
+  </div>
+    
+<script src="script.js?v=20251119-c"></script>
 </body>
 </html>
