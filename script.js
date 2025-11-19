@@ -1,4 +1,4 @@
-// pokemon-candy-2025-11-19-c
+// pokemon-candy-2025-11-19-d
 
 // CSVデータ格納用
 let pokeData = [];         // {name, growth}
@@ -6,7 +6,8 @@ let growthExpTable = {};   // growthType => {level: totalExp}
 let candyList = [];        // [{name, xp}, ...]
 
 const pokemonInput = document.getElementById('pokemonName');
-const currentValueInput = document.getElementById('currentLevel');  // レベル or 経験値
+const currentLevelInput = document.getElementById('currentLevel');  // レベル入力欄
+const currentExpInput = document.getElementById('currentExp');      // 経験値入力欄
 const targetLevelInput = document.getElementById('targetLevel');
 const calcBtn = document.getElementById('calcBtn');
 const errorDiv = document.getElementById('error');
@@ -18,10 +19,13 @@ const resultCurrentExp = document.getElementById('resultCurrentExp');
 const resultTargetExp = document.getElementById('resultTargetExp');  
 const resultNeedExp = document.getElementById('resultNeedExp');
 const resultCandies = document.getElementById('resultCandies');
+
 const growthSelect = document.getElementById('growthTypeSelect');
 const expTableContainer = document.getElementById('expTableContainer');
 
 const modeRadios = document.querySelectorAll('input[name="inputMode"]');
+const levelGroup = document.getElementById('levelInputGroup');
+const expGroup = document.getElementById('expInputGroup');
 
 // --- CSVパーサ（超シンプル版：カンマ区切り前提）---
 function parseCsv(text) {
@@ -73,9 +77,25 @@ async function loadData() {
 
     // 経験値テーブル
     const tableCsv = parseCsv(tableText);
-    const headers = tableCsv.header;
+    const headers = tableCsv.header;  // ['レベル', '60万タイプ', ...]
     tableCsv.rows.forEach(row => {
-      ...
+      const level = Number(row['レベル']);
+      if (Number.isNaN(level)) return;
+
+      headers.forEach(h => {
+        if (h === 'レベル') return;
+
+        const raw = (row[h] || '');
+        const numStr = raw.replace(/,/g, '').trim(); // カンマ除去
+        const exp = numStr === '' ? NaN : Number(numStr);
+
+        if (!growthExpTable[h]) {
+          growthExpTable[h] = {};
+        }
+        if (!Number.isNaN(exp)) {
+          growthExpTable[h][level] = exp;
+        }
+      });
     });
 
     // セレクトボックスに経験値タイプを追加
@@ -91,6 +111,9 @@ async function loadData() {
 
     // ボタンを有効化
     calcBtn.disabled = false;
+
+    // 入力モードの初期表示
+    updateInputMode();
 
   } catch (e) {
     console.error(e);
@@ -179,6 +202,23 @@ function renderExpTable(growthType) {
   expTableContainer.innerHTML = html;
 }
 
+// 入力モード切り替え（レベル/経験値）
+function updateInputMode() {
+  const checked = document.querySelector('input[name="inputMode"]:checked');
+  const mode = checked ? checked.value : 'level';
+
+  if (mode === 'level') {
+    levelGroup.style.display = '';
+    expGroup.style.display = 'none';
+  } else {
+    levelGroup.style.display = 'none';
+    expGroup.style.display = '';
+  }
+
+  errorDiv.textContent = '';
+  resultCard.style.display = 'none';
+}
+
 // --- メイン計算 ---
 function handleCalc() {
   errorDiv.textContent = '';
@@ -215,7 +255,7 @@ function handleCalc() {
   let curLv;
 
   if (mode === 'level') {
-    const curLvNum = Number(currentValueInput.value);
+    const curLvNum = Number(currentLevelInput.value);
     if (!Number.isInteger(curLvNum) || curLvNum < 1 || curLvNum > 100) {
       errorDiv.textContent = '現在のレベルは1〜100の整数で入力してください。';
       return;
@@ -234,7 +274,7 @@ function handleCalc() {
     curExp = e;
 
   } else { // mode === 'exp'
-    const curExpNum = Number(currentValueInput.value);
+    const curExpNum = Number(currentExpInput.value);
     if (!Number.isFinite(curExpNum) || curExpNum < 0) {
       errorDiv.textContent = '現在の経験値は0以上の数値で入力してください。';
       return;
@@ -265,8 +305,6 @@ function handleCalc() {
   // 結果表示
   resultName.textContent = `${name}（Lv.${curLv}）`;
   resultGrowth.textContent = growthType;
-
-  // ここを追加：現在・目標・必要の3つを出す
   resultCurrentExp.textContent = `${curExp.toLocaleString()} EXP`;
   resultTargetExp.textContent = `${tgtExp.toLocaleString()} EXP`;
   resultNeedExp.textContent = `${needExp.toLocaleString()} EXP`;
@@ -292,6 +330,8 @@ if (growthSelect) {
     renderExpTable(growthSelect.value);
   });
 }
+
+modeRadios.forEach(r => r.addEventListener('change', updateInputMode));
 
 // 初期化
 loadData();
