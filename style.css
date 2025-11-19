@@ -115,6 +115,8 @@
   text-align: center;  /* Lv列 */
 }
 
-.exp-table td:last-child {
-  text-align: right;   /* 累計EXP列 */
+/* 2列目と3列目は右寄せ */
+.exp-table td:nth-child(2),
+.exp-table td:nth-child(3) {
+  text-align: right;
 }
