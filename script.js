@@ -1,4 +1,4 @@
-// pokemon-candy-2025-11-19-f
+// pokemon-candy-2025-11-19-g
 
 // CSVデータ格納用
 let pokeData = [];         // {name, growth}
@@ -396,7 +396,7 @@ function handleCalc() {
   }
 
   resultCard.style.display = 'block';
-
+}
 // イベント設定
 calcBtn.addEventListener('click', handleCalc);
 
