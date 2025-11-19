@@ -1,4 +1,4 @@
-// pokemon-candy-2025-11-19-e
+// pokemon-candy-2025-11-19-z
 
 // CSVデータ格納用
 let pokeData = [];         // {name, growth}
@@ -190,7 +190,7 @@ function renderExpTable(growthType) {
     return;
   }
 
-  let html = '<table class="exp-table"><thead><tr><th>Lv</th><th>累計EXP</th><th>次レベルまで</th></tr></thead><tbody>';
+  let html = '<table class="exp-table"><thead><tr><th>Lv</th><th>累計EXP</th><th>次レベルまで</th><th>説明文</th></tr></thead><tbody>';
 
 for (let lv = 1; lv <= 100; lv++) {
   const exp = table[lv];
@@ -198,16 +198,19 @@ for (let lv = 1; lv <= 100; lv++) {
 
   const nextExp = table[lv + 1];
   let diffStr = '-';
+  let descStr = '-';
 
   if (nextExp != null) {
     const diff = nextExp - exp;
     diffStr = `${diff.toLocaleString()} EXP`;
+    descStr = `Lv.${lv} → Lv.${lv + 1} に ${diff.toLocaleString()} 必要`;
   }
 
   html += `<tr>
     <td>${lv}</td>
     <td>${exp.toLocaleString()}</td>
     <td>${diffStr}</td>
+    <td>${descStr}</td>
   </tr>`;
 }
 
