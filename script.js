@@ -1,4 +1,4 @@
-// pokemon-candy-2025-11-19-z
+// pokemon-candy-2025-11-19-z-a
 
 // CSVデータ格納用
 let pokeData = [];         // {name, growth}
@@ -203,7 +203,7 @@ for (let lv = 1; lv <= 100; lv++) {
   if (nextExp != null) {
     const diff = nextExp - exp;
     diffStr = `${diff.toLocaleString()} EXP`;
-    descStr = `Lv.${lv} → Lv.${lv + 1} に ${diff.toLocaleString()} 必要`;
+    descStr = `Lv.${lv} → Lv.${lv + 1} に<br>経験値 ${diff.toLocaleString()} 必要`;
   }
 
   html += `<tr>
