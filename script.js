@@ -1,4 +1,4 @@
-// pokemon-candy-2025-11-19-e
+// pokemon-candy-2025-11-19-f
 
 // CSVデータ格納用
 let pokeData = [];         // {name, growth}
@@ -148,6 +148,46 @@ function getLevelFromExp(growthType, currentExp) {
     }
   }
   return level;
+}
+
+// ふしぎなアメプランを計算
+// growthType: 経験値タイプ文字列（例：'100万タイプ'）
+// curLv     : 現在レベル
+// curExp    : 現在経験値
+// tgtLv     : 目標レベル
+function calcRareCandyPlan(growthType, curLv, curExp, tgtLv) {
+  const table = growthExpTable[growthType];
+  if (!table) return { count: 0, coveredExp: 0 };
+
+  let level = curLv;
+  let currentExp = curExp;
+  let count = 0;        // ふしぎなアメ個数
+  let coveredExp = 0;   // ふしぎなアメでまかなえる経験値の合計
+
+  while (level < tgtLv) {
+    const nextLv = level + 1;
+    const nextTotal = table[nextLv];
+    if (nextTotal == null) break;
+
+    // このレベルから次のレベルに上がるのに必要な経験値
+    // 最初の1回だけは「現在経験値」からの差分を使う
+    const baseExp = (level === curLv) ? currentExp : table[level];
+    const stepNeed = nextTotal - baseExp;
+
+    if (stepNeed >= 30000) {
+      // このレベルアップはふしぎなアメの方が効率が良い
+      count++;
+      coveredExp += stepNeed;
+      // レベルアップ後の状態に更新
+      currentExp = nextTotal;
+      level = nextLv;
+    } else {
+      // ここはけいけんアメ側でカバーするので、レベルだけ進める
+      level = nextLv;
+    }
+  }
+
+  return { count, coveredExp };
 }
 
 // 必要経験値を満たすけいけんアメの簡易計算
@@ -313,7 +353,14 @@ function handleCalc() {
     return;
   }
 
-  const candies = calcCandies(needExp);
+  // ふしぎなアメプランを計算
+  const rarePlan = calcRareCandyPlan(growthType, curLv, curExp, tgtLv);
+
+  // ふしぎなアメでまかなう分を差し引いて、残りをけいけんアメで補う
+  let expForCandies = needExp - rarePlan.coveredExp;
+  if (expForCandies < 0) expForCandies = 0;
+
+  const candies = calcCandies(expForCandies);
 
   // 結果表示
   resultName.textContent = `${name}（Lv.${curLv}）`;
@@ -322,18 +369,33 @@ function handleCalc() {
   resultTargetExp.textContent = `${tgtExp.toLocaleString()} EXP`;
   resultNeedExp.textContent = `${needExp.toLocaleString()} EXP`;
 
-  if (candies.detail.length === 0) {
+  // ふしぎなアメ＋けいけんアメの案内
+  if (rarePlan.count === 0 && candies.detail.length === 0) {
+    // どちらも不要（ほぼ起こらないけど一応）
     resultCandies.textContent = 'けいけんアメは不要です。';
   } else {
-    const lines = candies.detail.map(c => {
-      return `アメ${c.name} × ${c.count}（合計 ${(c.xp * c.count).toLocaleString()} EXP）`;
+    const lines = [];
+
+    // ふしぎなアメ案
+    if (rarePlan.count > 0) {
+      lines.push(
+        `ふしぎなアメ × ${rarePlan.count}（合計 ${rarePlan.coveredExp.toLocaleString()} EXP 相当）`
+      );
+    }
+
+    // けいけんアメ案
+    candies.detail.forEach(c => {
+      lines.push(
+        `アメ${c.name} × ${c.count}（合計 ${(c.xp * c.count).toLocaleString()} EXP）`
+      );
     });
-    const totalStr = `合計 ${candies.total.toLocaleString()} EXP`;
+
+    const totalExpFromItems = rarePlan.coveredExp + candies.total;
+    const totalStr = `合計 ${totalExpFromItems.toLocaleString()} EXP`;
     resultCandies.innerHTML = lines.join('<br>') + '<br><strong>' + totalStr + '</strong>';
   }
 
   resultCard.style.display = 'block';
-}
 
 // イベント設定
 calcBtn.addEventListener('click', handleCalc);
