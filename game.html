@@ -13,30 +13,26 @@
         }
         canvas { display: block; }
         
-        /* 画面中央のUIコンテナ */
+        /* 画面中央のUIコンテナ（表示位置を50%から35%に上げて少し上に配置） */
         .center-ui {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%);
             text-align: center; width: 100%; pointer-events: none;
         }
         
-        /* 各種画面（初期状態は非表示） */
         #startScreen, #pauseScreen, #gameOverScreen { display: none; pointer-events: auto; }
         
-        /* テキストのスタイル */
         h1 { color: white; text-shadow: 2px 2px 0 #000; margin-bottom: 30px; letter-spacing: 2px; }
         .title-text { color: #00ffcc; font-size: 36px; }
         .gameover-text { color: #ff3333; font-size: 40px; }
         
-        /* ボタンの共通スタイル */
         button {
             padding: 15px 30px; margin: 10px; font-size: 18px; font-weight: bold;
             color: white; background-color: #007bff; border: none; border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: pointer;
         }
-        button:active { transform: scale(0.95); } /* 押したときのへこみアニメーション */
+        button:active { transform: scale(0.95); } 
         .btn-secondary { background-color: #6c757d; }
         
-        /* プレイ中の右上ポーズボタン */
         #pauseBtn {
             position: absolute; top: 10px; right: 10px;
             padding: 10px 15px; font-size: 16px; font-weight: bold;
@@ -47,30 +43,26 @@
     </style>
 </head>
 <body>
-    <!-- ゲームを描画するキャンバス -->
     <canvas id="gameCanvas"></canvas>
     
-    <!-- プレイ中のみ表示される右上の中断ボタン -->
     <button id="pauseBtn">⏸ 中断</button>
 
-    <!-- 画面中央に表示されるUI -->
     <div class="center-ui">
         
-        <!-- 1. タイトル（開始前）画面 -->
         <div id="startScreen">
             <h1 class="title-text">スペースシューター</h1>
             <p style="color: white; margin-bottom: 30px;">指でなぞって移動（自動射撃）</p>
-            <button id="startBtn">ゲーム開始</button>
+            <button id="startBtn">ゲーム開始</button><br>
+            <!-- index.htmlに戻るボタンを追加 -->
+            <button id="backToTopBtn" class="btn-secondary" style="margin-top: 15px;">トップページに戻る</button>
         </div>
 
-        <!-- 2. 中断（ポーズ）画面 -->
         <div id="pauseScreen">
             <h1>PAUSE</h1>
             <button id="resumeBtn">再開する</button><br>
             <button id="titleBtnFromPause" class="btn-secondary">最初に戻る</button>
         </div>
 
-        <!-- 3. ゲームオーバー画面 -->
         <div id="gameOverScreen">
             <h1 class="gameover-text">GAME OVER</h1>
             <button id="restartBtn">もう一度遊ぶ</button><br>
@@ -83,10 +75,9 @@
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
 
-        // UI要素の取得
         const screens = {
             start: document.getElementById("startScreen"),
-            playing: document.getElementById("pauseBtn"), // プレイ中はポーズボタンを表示
+            playing: document.getElementById("pauseBtn"), 
             paused: document.getElementById("pauseScreen"),
             gameover: document.getElementById("gameOverScreen")
         };
@@ -97,11 +88,8 @@
         let enemies = [];
         let score = 0;
         let frameCount = 0;
-        
-        // ゲームの状態を管理（start, playing, paused, gameover）
         let currentState = "start"; 
 
-        // 画面サイズ設定
         function resize() {
             width = window.innerWidth;
             height = window.innerHeight;
@@ -111,18 +99,14 @@
         window.addEventListener('resize', resize);
         resize();
 
-        // 状態を切り替えてUIの表示/非表示をコントロールする関数
         function changeState(newState) {
             currentState = newState;
-            // 全てのUIを一旦隠す
             Object.values(screens).forEach(screen => screen.style.display = "none");
-            // 現在の状態のUIだけ表示する
             if (screens[newState]) {
                 screens[newState].style.display = "block";
             }
         }
 
-        // ゲームの初期化（変数のリセット）
         function initGameVariables() {
             bullets = [];
             enemies = [];
@@ -132,32 +116,25 @@
             player.y = height - 150;
         }
 
-        // 物理演算や移動の処理
         function update() {
-            // プレイ中以外は処理を止める（これでポーズ機能が実現）
             if (currentState !== "playing") return;
-            
             frameCount++;
 
-            // オート連射
             if (frameCount % 8 === 0) {
                 bullets.push({ x: player.x + player.w / 2 - 3, y: player.y, w: 6, h: 15, speed: 12 });
             }
 
-            // 弾の移動
             bullets.forEach(b => b.y -= b.speed);
             bullets = bullets.filter(b => b.y + b.h > 0);
 
-            // 敵の生成と移動
             if (Math.random() < 0.05) {
                 let size = 30 + Math.random() * 20;
                 enemies.push({ x: Math.random() * (width - size), y: -size, w: size, h: size, speed: 3 + Math.random() * 4 });
             }
             enemies.forEach(e => e.y += e.speed);
 
-            // 衝突判定
             enemies.forEach((e, eIndex) => {
-                let margin = 8; // 判定を少し甘くする
+                let margin = 8; 
                 if (e.y + e.h > player.y + margin && e.x < player.x + player.w - margin && 
                     e.x + e.w > player.x + margin && e.y < player.y + player.h - margin) {
                     changeState("gameover");
@@ -175,16 +152,12 @@
             enemies = enemies.filter(e => e.y < height);
         }
 
-        // 画面の描画処理
         function draw() {
-            // 背景の描画
             ctx.fillStyle = "#111";
             ctx.fillRect(0, 0, width, height);
             
-            // スタート画面の時は背景のみ表示して終わる
             if (currentState === "start") return;
 
-            // 自機の描画（上向きの三角形）
             if (currentState !== "gameover") {
                 ctx.fillStyle = "#00ffcc";
                 ctx.beginPath();
@@ -194,38 +167,37 @@
                 ctx.fill();
             }
 
-            // 弾と敵の描画
             ctx.fillStyle = "#ffff00";
             bullets.forEach(b => ctx.fillRect(b.x, b.y, b.w, b.h));
             
             ctx.fillStyle = "#ff4444";
             enemies.forEach(e => ctx.fillRect(e.x, e.y, e.w, e.h));
             
-            // スコア表示
             ctx.fillStyle = "white";
             ctx.font = "bold 24px sans-serif";
             ctx.fillText("SCORE: " + score, 20, 40);
 
-            // ポーズ中は画面全体を暗くするフィルターを描画
             if (currentState === "paused") {
                 ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
                 ctx.fillRect(0, 0, width, height);
             }
         }
 
-        // メインループ
         function loop() {
             update();
             draw();
             requestAnimationFrame(loop);
         }
 
-        // ==========================================
-        // ボタンのクリック（タップ）イベント
-        // ==========================================
+        // --- ボタンの処理 ---
         document.getElementById("startBtn").addEventListener("click", () => {
             initGameVariables();
             changeState("playing");
+        });
+
+        // トップページに戻るボタンの処理を追加
+        document.getElementById("backToTopBtn").addEventListener("click", () => {
+            window.location.href = "index.html";
         });
 
         document.getElementById("pauseBtn").addEventListener("click", () => {
@@ -236,7 +208,6 @@
             changeState("playing");
         });
 
-        // 「最初に戻る」ボタン（ポーズ中／ゲームオーバー中の2箇所）
         document.getElementById("titleBtnFromPause").addEventListener("click", () => changeState("start") );
         document.getElementById("titleBtnFromGameOver").addEventListener("click", () => changeState("start") );
 
@@ -245,13 +216,11 @@
             changeState("playing");
         });
 
-        // ==========================================
-        // タッチ操作（プレイ中のみ反応させる）
-        // ==========================================
+        // --- タッチ操作 ---
         let isTouching = false;
 
         function movePlayer(e) {
-            if (currentState !== "playing") return; // プレイ中以外は動かさない
+            if (currentState !== "playing") return; 
             e.preventDefault(); 
             const touch = e.touches[0];
             
@@ -275,7 +244,6 @@
 
         canvas.addEventListener("touchend", () => { isTouching = false; });
 
-        // PCテスト用のマウス操作
         let isMouseDown = false;
         canvas.addEventListener("mousedown", (e) => {
             if (currentState !== "playing") return;
@@ -291,7 +259,6 @@
         });
         window.addEventListener("mouseup", () => isMouseDown = false );
 
-        // 起動時はスタート画面を表示してループ開始
         changeState("start");
         loop();
     </script>

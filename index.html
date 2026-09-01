@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>マイゲームポータル</title>
     <style>
-        /* 白を基調としたクリーンなデザイン */
         body {
-            background-color: #f8f9fa; /* 完全な真っ白ではなく、目に優しいオフホワイト */
+            background-color: #f8f9fa;
             color: #333333;
             font-family: 'Helvetica Neue', Arial, sans-serif;
             margin: 0;
@@ -15,8 +14,11 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            /* 画面の中央から上寄りに変更 */
+            justify-content: flex-start;
+            padding-top: 20vh; 
             height: 100vh;
+            box-sizing: border-box;
         }
         
         h1 {
@@ -34,20 +36,18 @@
             line-height: 1.5;
         }
         
-        /* ゲーム起動用のボタン */
         .play-button {
             background-color: #007bff;
             color: white;
-            text-decoration: none; /* リンクの下線を消す */
+            text-decoration: none;
             padding: 15px 40px;
             font-size: 18px;
             font-weight: bold;
-            border-radius: 30px; /* 角を丸くしてアプリっぽく */
+            border-radius: 30px;
             box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
             transition: all 0.2s ease;
         }
         
-        /* ボタンを押したときのへこむアニメーション */
         .play-button:active {
             transform: scale(0.95);
             box-shadow: 0 2px 5px rgba(0, 123, 255, 0.3);
@@ -58,7 +58,6 @@
     <h1>ミニゲームコレクション</h1>
     <p>ブラウザですぐに遊べるお手軽なゲームです。<br>下のボタンから起動してください。</p>
     
-    <!-- game.html へのリンク -->
     <a href="game.html" class="play-button">スペースシューターを遊ぶ</a>
 </body>
 </html>
