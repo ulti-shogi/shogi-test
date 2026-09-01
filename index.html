@@ -1,99 +1,64 @@
 <!DOCTYPE html>
-<!-- pokemon-candy-2025-11-19-z-a -->
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>ポケモン経験値計算（けいけんアメ版）</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="style.css?v=20251119-2">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マイゲームポータル</title>
+    <style>
+        /* 白を基調としたクリーンなデザイン */
+        body {
+            background-color: #f8f9fa; /* 完全な真っ白ではなく、目に優しいオフホワイト */
+            color: #333333;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: #222222;
+        }
+        
+        p {
+            font-size: 16px;
+            color: #666666;
+            margin-bottom: 40px;
+            text-align: center;
+            padding: 0 20px;
+            line-height: 1.5;
+        }
+        
+        /* ゲーム起動用のボタン */
+        .play-button {
+            background-color: #007bff;
+            color: white;
+            text-decoration: none; /* リンクの下線を消す */
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 30px; /* 角を丸くしてアプリっぽく */
+            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+            transition: all 0.2s ease;
+        }
+        
+        /* ボタンを押したときのへこむアニメーション */
+        .play-button:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 5px rgba(0, 123, 255, 0.3);
+        }
+    </style>
 </head>
 <body>
-  <h1>けいけんアメ最適化ツール</h1>
-
-  <div class="card">
-    <label for="pokemonName">ポケモン名を入力する</label>
-    <input id="pokemonName" type="text" list="pokemonList" placeholder="例：フシギダネ">
-    <datalist id="pokemonList"></datalist>
-
-    <!-- 入力モード切り替え -->
-    <div class="mode-row">
-      <label>
-        <input type="radio" name="inputMode" value="level" checked>
-        レベルを入力
-      </label>
-      <label>
-        <input type="radio" name="inputMode" value="exp">
-        経験値を入力
-      </label>
-    </div>
-
-    <!-- レベル入力グループ -->
-    <div id="levelInputGroup">
-      <label for="currentLevel">現在のレベルもしくは経験値</label>
-      <input id="currentLevel" type="number" min="1" max="100" value="1">
-    </div>
-
-    <!-- 経験値入力グループ -->
-    <div id="expInputGroup" style="display:none;">
-      <label for="currentExp">現在の経験値</label>
-      <input id="currentExp" type="number" min="0" step="1" placeholder="例：8012">
-    </div>
-
-    <label for="targetLevel">上げたいレベル</label>
-    <input id="targetLevel" type="number" min="1" max="100" value="50">
-
-    <button id="calcBtn" disabled>計算する</button>
-    <div id="error" class="error"></div>
-  </div>
-
-  <div class="card" id="resultCard" style="display:none;">
-    <div class="result-row">
-      <span class="label">ポケモン（レベル）</span>
-      <span class="value" id="resultName"></span>
-    </div>
-    <div class="result-row">
-      <span class="label">経験値タイプ</span>
-      <span class="value" id="resultGrowth"></span>
-    </div>
-   
-    <div class="result-row">
-      <span class="label">目標経験値</span>
-      <span class="value" id="resultTargetExp"></span>
-    </div>
-    <div class="result-row">
-      <span class="label">現在経験値</span>
-      <span class="value" id="resultCurrentExp"></span>
-    </div>
+    <h1>ミニゲームコレクション</h1>
+    <p>ブラウザですぐに遊べるお手軽なゲームです。<br>下のボタンから起動してください。</p>
     
-    <div class="result-row">
-      <span class="label">必要経験値</span>
-      <span class="value" id="resultNeedExp"></span>
-    </div>
-    <div class="candies">
-      <div><strong>けいけんアメの目安</strong></div>
-      <div id="resultCandies"></div>
-      <div class="note">
-        ※第1版では「不足しないようにXSで微調整」した簡易計算です。<br>
-        ※最適解（過不足や個数を最小化）は今後の拡張で対応予定です。
-      </div>
-    </div>
-  </div>
-
-    <!-- 経験値テーブル -->
-    <div class="card" id="expTableCard">
-    <div class="result-row">
-      <span class="label">経験値タイプ別テーブル</span>
-    </div>
-
-    <label for="growthTypeSelect">経験値タイプを選択</label>
-    <select id="growthTypeSelect">
-      <option value="">選択してください</option>
-      <!-- 中身はJS側で埋める -->
-    </select>
-
-    <div id="expTableContainer" class="exp-table-container"></div>
-  </div>
-    
-<script src="script.js?v=20251119-z-a"></script>
+    <!-- game.html へのリンク -->
+    <a href="game.html" class="play-button">スペースシューターを遊ぶ</a>
 </body>
 </html>
