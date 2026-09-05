@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>マイゲームポータル</title>
+
+    <!-- ▼▼▼ ここから追加（PWAの設定を読み込む） ▼▼▼ -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#f8f9fa">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <!-- ▲▲▲ ここまで追加 ▲▲▲ -->
+    
     <style>
         body {
             background-color: #f8f9fa;
@@ -59,5 +66,23 @@
     <p>ブラウザですぐに遊べます。<br>下のボタンから起動してください。</p>
     
     <a href="game.html" class="play-button">スペースシューターを遊ぶ</a>
+
+    <!-- ... (既存の <h1> や <a> タグはそのまま) ... -->
+    <a href="game.html" class="play-button">スペースシューターを遊ぶ</a>
+
+    <!-- ▼▼▼ ここから追加（裏方プログラムを起動させる） ▼▼▼ -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('sw.js').then(function(registration) {
+                    console.log('ServiceWorkerの登録に成功しました');
+                }, function(err) {
+                    console.log('ServiceWorkerの登録に失敗しました: ', err);
+                });
+            });
+        }
+    </script>
+    <!-- ▲▲▲ ここまで追加 ▲▲▲ -->
+    
 </body>
 </html>
